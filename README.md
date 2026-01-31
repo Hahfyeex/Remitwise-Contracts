@@ -34,6 +34,7 @@ cargo build --release --target wasm32-unknown-unknown
 Handles automatic allocation of remittance funds into different categories.
 
 **Key Functions:**
+
 - `initialize_split`: Set percentage allocation (spending, savings, bills, insurance)
 - `get_split`: Get current split configuration
 - `calculate_split`: Calculate actual amounts from total remittance
@@ -49,10 +50,16 @@ Handles automatic allocation of remittance funds into different categories.
 Manages goal-based savings with target dates.
 
 **Key Functions:**
+
 - `create_goal`: Create a new savings goal (education, medical, etc.)
 - `add_to_goal`: Add funds to a goal
 - `get_goal`: Get goal details
 - `is_goal_completed`: Check if goal target is reached
+- `archive_completed_goals`: Archive completed goals to reduce storage
+- `get_archived_goals`: Query archived goals
+- `restore_goal`: Restore archived goal to active storage
+- `cleanup_old_archives`: Permanently delete old archives
+- `get_storage_stats`: Get storage usage statistics
 
 **Events:**
 - `GoalCreatedEvent`: Emitted when a new savings goal is created
@@ -67,10 +74,16 @@ Manages goal-based savings with target dates.
 Tracks and manages bill payments with recurring support.
 
 **Key Functions:**
+
 - `create_bill`: Create a new bill (electricity, school fees, etc.)
 - `pay_bill`: Mark a bill as paid and create next recurring bill if applicable
 - `get_unpaid_bills`: Get all unpaid bills
 - `get_total_unpaid`: Get total amount of unpaid bills
+- `archive_paid_bills`: Archive paid bills to reduce storage
+- `get_archived_bills`: Query archived bills
+- `restore_bill`: Restore archived bill to active storage
+- `bulk_cleanup_bills`: Permanently delete old archives
+- `get_storage_stats`: Get storage usage statistics
 
 **Events:**
 - `BillCreatedEvent`: Emitted when a new bill is created
@@ -85,6 +98,7 @@ Tracks and manages bill payments with recurring support.
 Manages micro-insurance policies and premium payments.
 
 **Key Functions:**
+
 - `create_policy`: Create a new insurance policy
 - `pay_premium`: Pay monthly premium
 - `get_active_policies`: Get all active policies
@@ -141,6 +155,20 @@ cargo test
 - The suite covers minting the payer account, splitting across spending/savings/bills/insurance, and asserting balances along with the new allocation metadata helper.
 - The same command is intended for CI so it runs without manual setup; re-run locally whenever split logic changes or new USDC paths are added.
 
+## Gas Benchmarks
+
+See `docs/gas-optimization.md` for methodology, before/after results, and assumptions.
+
+Run the deterministic gas benchmarks:
+
+```bash
+RUST_TEST_THREADS=1 cargo test -p bill_payments --test gas_bench -- --nocapture
+RUST_TEST_THREADS=1 cargo test -p savings_goals --test gas_bench -- --nocapture
+RUST_TEST_THREADS=1 cargo test -p insurance --test gas_bench -- --nocapture
+RUST_TEST_THREADS=1 cargo test -p family_wallet --test gas_bench -- --nocapture
+RUST_TEST_THREADS=1 cargo test -p remittance_split --test gas_bench -- --nocapture
+```
+
 ## Deployment
 
 See the [Deployment Guide](DEPLOYMENT.md) for comprehensive deployment instructions.
@@ -166,4 +194,3 @@ This is a basic MVP implementation. Future enhancements:
 ## License
 
 MIT
-

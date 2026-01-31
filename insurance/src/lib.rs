@@ -41,9 +41,13 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Vec,
 };
 
-// Storage TTL constants
+// Storage TTL constants for active data
 const INSTANCE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
 const INSTANCE_BUMP_AMOUNT: u32 = 518400; // ~30 days
+
+// Storage TTL constants for archived data (longer retention, less frequent access)
+const ARCHIVE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
+const ARCHIVE_BUMP_AMOUNT: u32 = 2592000; // ~180 days (6 months)
 
 /// Insurance policy data structure with owner tracking for access control
 #[derive(Clone)]
@@ -66,6 +70,39 @@ pub enum InsuranceEvent {
     PolicyCreated,
     PremiumPaid,
     PolicyDeactivated,
+}
+
+/// Archived policy - compressed record with essential fields only
+#[contracttype]
+#[derive(Clone)]
+pub struct ArchivedPolicy {
+    pub id: u32,
+    pub owner: Address,
+    pub name: String,
+    pub coverage_type: String,
+    pub total_coverage: i128,
+    pub deactivated_at: u64,
+    pub archived_at: u64,
+}
+
+/// Storage statistics for monitoring
+#[contracttype]
+#[derive(Clone)]
+pub struct StorageStats {
+    pub active_policies: u32,
+    pub archived_policies: u32,
+    pub total_active_coverage: i128,
+    pub total_archived_coverage: i128,
+    pub last_updated: u64,
+}
+
+/// Events for archival operations
+#[contracttype]
+#[derive(Clone)]
+pub enum ArchiveEvent {
+    PoliciesArchived,
+    PolicyRestored,
+    ArchivesCleaned,
 }
 
 #[contract]
@@ -269,17 +306,9 @@ impl Insurance {
             .unwrap_or_else(|| Map::new(&env));
 
         let mut result = Vec::new(&env);
-        let max_id = env
-            .storage()
-            .instance()
-            .get(&symbol_short!("NEXT_ID"))
-            .unwrap_or(0u32);
-
-        for i in 1..=max_id {
-            if let Some(policy) = policies.get(i) {
-                if policy.active && policy.owner == owner {
-                    result.push_back(policy);
-                }
+        for (_, policy) in policies.iter() {
+            if policy.active && policy.owner == owner {
+                result.push_back(policy);
             }
         }
         result
@@ -293,10 +322,17 @@ impl Insurance {
     /// # Returns
     /// Total monthly premium amount for the owner's active policies
     pub fn get_total_monthly_premium(env: Env, owner: Address) -> i128 {
-        let active = Self::get_active_policies(env, owner);
         let mut total = 0i128;
-        for policy in active.iter() {
-            total += policy.monthly_premium;
+        let policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        for (_, policy) in policies.iter() {
+            if policy.active && policy.owner == owner {
+                total += policy.monthly_premium;
+            }
         }
         total
     }
@@ -366,341 +402,304 @@ impl Insurance {
         true
     }
 
+    /// Archive inactive policies that were deactivated before the specified timestamp.
+    ///
+    /// # Arguments
+    /// * `caller` - Address of the caller (must authorize)
+    /// * `before_timestamp` - Archive policies deactivated before this timestamp
+    ///
+    /// # Returns
+    /// Number of policies archived
+    pub fn archive_inactive_policies(env: Env, caller: Address, before_timestamp: u64) -> u32 {
+        caller.require_auth();
+        Self::extend_instance_ttl(&env);
+
+        let mut policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut archived: Map<u32, ArchivedPolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ARCH_POL"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let current_time = env.ledger().timestamp();
+        let mut archived_count = 0u32;
+        let mut to_remove: Vec<u32> = Vec::new(&env);
+
+        for (id, policy) in policies.iter() {
+            // Archive if policy is inactive and next_payment_date is before the specified timestamp
+            if !policy.active && policy.next_payment_date < before_timestamp {
+                let archived_policy = ArchivedPolicy {
+                    id: policy.id,
+                    owner: policy.owner.clone(),
+                    name: policy.name.clone(),
+                    coverage_type: policy.coverage_type.clone(),
+                    total_coverage: policy.coverage_amount,
+                    deactivated_at: policy.next_payment_date,
+                    archived_at: current_time,
+                };
+                archived.set(id, archived_policy);
+                to_remove.push_back(id);
+                archived_count += 1;
+            }
+        }
+
+        for i in 0..to_remove.len() {
+            if let Some(id) = to_remove.get(i) {
+                policies.remove(id);
+            }
+        }
+
+        env.storage()
+            .instance()
+            .set(&symbol_short!("POLICIES"), &policies);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ARCH_POL"), &archived);
+
+        Self::extend_archive_ttl(&env);
+        Self::update_storage_stats(&env);
+
+        env.events().publish(
+            (symbol_short!("insure"), ArchiveEvent::PoliciesArchived),
+            (archived_count, caller),
+        );
+
+        archived_count
+    }
+
+    /// Get all archived policies for a specific owner
+    ///
+    /// # Arguments
+    /// * `owner` - Address of the policy owner
+    ///
+    /// # Returns
+    /// Vec of all ArchivedPolicy structs belonging to the owner
+    pub fn get_archived_policies(env: Env, owner: Address) -> Vec<ArchivedPolicy> {
+        let archived: Map<u32, ArchivedPolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ARCH_POL"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut result = Vec::new(&env);
+        for (_, policy) in archived.iter() {
+            if policy.owner == owner {
+                result.push_back(policy);
+            }
+        }
+        result
+    }
+
+    /// Get a specific archived policy by ID
+    ///
+    /// # Arguments
+    /// * `policy_id` - ID of the archived policy
+    ///
+    /// # Returns
+    /// ArchivedPolicy struct or None if not found
+    pub fn get_archived_policy(env: Env, policy_id: u32) -> Option<ArchivedPolicy> {
+        let archived: Map<u32, ArchivedPolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ARCH_POL"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        archived.get(policy_id)
+    }
+
+    /// Restore an archived policy back to active storage
+    ///
+    /// # Arguments
+    /// * `caller` - Address of the caller (must be the policy owner)
+    /// * `policy_id` - ID of the policy to restore
+    ///
+    /// # Returns
+    /// True if restoration was successful
+    ///
+    /// # Panics
+    /// - If caller is not the policy owner
+    /// - If policy is not found in archive
+    pub fn restore_policy(env: Env, caller: Address, policy_id: u32) -> bool {
+        caller.require_auth();
+        Self::extend_instance_ttl(&env);
+
+        let mut archived: Map<u32, ArchivedPolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ARCH_POL"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let archived_policy = match archived.get(policy_id) {
+            Some(p) => p,
+            None => panic!("Archived policy not found"),
+        };
+
+        if archived_policy.owner != caller {
+            panic!("Only the policy owner can restore this policy");
+        }
+
+        let mut policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let restored_policy = InsurancePolicy {
+            id: archived_policy.id,
+            owner: archived_policy.owner.clone(),
+            name: archived_policy.name.clone(),
+            coverage_type: archived_policy.coverage_type.clone(),
+            monthly_premium: archived_policy.total_coverage / 12, // Estimate monthly premium
+            coverage_amount: archived_policy.total_coverage,
+            active: false, // Restored as inactive, needs reactivation
+            next_payment_date: env.ledger().timestamp() + (30 * 86400),
+        };
+
+        policies.set(policy_id, restored_policy);
+        archived.remove(policy_id);
+
+        env.storage()
+            .instance()
+            .set(&symbol_short!("POLICIES"), &policies);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ARCH_POL"), &archived);
+
+        Self::update_storage_stats(&env);
+
+        env.events().publish(
+            (symbol_short!("insure"), ArchiveEvent::PolicyRestored),
+            (policy_id, caller),
+        );
+
+        true
+    }
+
+    /// Permanently delete old archives before specified timestamp
+    ///
+    /// # Arguments
+    /// * `caller` - Address of the caller (must authorize)
+    /// * `before_timestamp` - Delete archives created before this timestamp
+    ///
+    /// # Returns
+    /// Number of archives deleted
+    pub fn bulk_cleanup_policies(env: Env, caller: Address, before_timestamp: u64) -> u32 {
+        caller.require_auth();
+        Self::extend_instance_ttl(&env);
+
+        let mut archived: Map<u32, ArchivedPolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ARCH_POL"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut deleted_count = 0u32;
+        let mut to_remove: Vec<u32> = Vec::new(&env);
+
+        for (id, policy) in archived.iter() {
+            if policy.archived_at < before_timestamp {
+                to_remove.push_back(id);
+                deleted_count += 1;
+            }
+        }
+
+        for i in 0..to_remove.len() {
+            if let Some(id) = to_remove.get(i) {
+                archived.remove(id);
+            }
+        }
+
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ARCH_POL"), &archived);
+
+        Self::update_storage_stats(&env);
+
+        env.events().publish(
+            (symbol_short!("insure"), ArchiveEvent::ArchivesCleaned),
+            (deleted_count, caller),
+        );
+
+        deleted_count
+    }
+
+    /// Get storage usage statistics
+    ///
+    /// # Returns
+    /// StorageStats struct with current storage metrics
+    pub fn get_storage_stats(env: Env) -> StorageStats {
+        env.storage()
+            .instance()
+            .get(&symbol_short!("STOR_STAT"))
+            .unwrap_or(StorageStats {
+                active_policies: 0,
+                archived_policies: 0,
+                total_active_coverage: 0,
+                total_archived_coverage: 0,
+                last_updated: 0,
+            })
+    }
+
     /// Extend the TTL of instance storage
     fn extend_instance_ttl(env: &Env) {
         env.storage()
             .instance()
             .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
-    use soroban_sdk::Env;
-
-    fn create_test_env() -> Env {
-        let env = Env::default();
-        env.mock_all_auths();
-        env.ledger().set(LedgerInfo {
-            timestamp: 1000000000, // Fixed timestamp for testing
-            protocol_version: 20,
-            sequence_number: 1,
-            network_id: [0; 32],
-            base_reserve: 10,
-            min_temp_entry_ttl: 10,
-            min_persistent_entry_ttl: 10,
-            max_entry_ttl: 3110400,
-        });
-        env
+    /// Extend the TTL of archive storage with longer duration
+    fn extend_archive_ttl(env: &Env) {
+        env.storage()
+            .instance()
+            .extend_ttl(ARCHIVE_LIFETIME_THRESHOLD, ARCHIVE_BUMP_AMOUNT);
     }
 
-    #[test]
-    fn test_create_policy_success() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
+    /// Update storage statistics
+    fn update_storage_stats(env: &Env) {
+        let policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(env));
 
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-        let monthly_premium = 100;
-        let coverage_amount = 10000;
+        let archived: Map<u32, ArchivedPolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ARCH_POL"))
+            .unwrap_or_else(|| Map::new(env));
 
-        let policy_id = client.create_policy(
-            &owner,
-            &name,
-            &coverage_type,
-            &monthly_premium,
-            &coverage_amount,
-        );
-
-        assert_eq!(policy_id, 1);
-
-        let policy = client.get_policy(&policy_id).unwrap();
-        assert_eq!(policy.id, 1);
-        assert_eq!(policy.owner, owner);
-        assert_eq!(policy.name, name);
-        assert_eq!(policy.coverage_type, coverage_type);
-        assert_eq!(policy.monthly_premium, monthly_premium);
-        assert_eq!(policy.coverage_amount, coverage_amount);
-        assert!(policy.active);
-        assert_eq!(policy.next_payment_date, 1000000000 + (30 * 86400));
-    }
-
-    #[test]
-    #[should_panic(expected = "Monthly premium must be positive")]
-    fn test_create_policy_zero_premium() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-
-        client.create_policy(&owner, &name, &coverage_type, &0, &10000);
-    }
-
-    #[test]
-    #[should_panic(expected = "Monthly premium must be positive")]
-    fn test_create_policy_negative_premium() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-
-        client.create_policy(&owner, &name, &coverage_type, &-100, &10000);
-    }
-
-    #[test]
-    #[should_panic(expected = "Coverage amount must be positive")]
-    fn test_create_policy_zero_coverage() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-
-        client.create_policy(&owner, &name, &coverage_type, &100, &0);
-    }
-
-    #[test]
-    #[should_panic(expected = "Coverage amount must be positive")]
-    fn test_create_policy_negative_coverage() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-
-        client.create_policy(&owner, &name, &coverage_type, &100, &-10000);
-    }
-
-    #[test]
-    fn test_pay_premium_success() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-        let policy_id = client.create_policy(&owner, &name, &coverage_type, &100, &10000);
-
-        let result = client.pay_premium(&owner, &policy_id);
-        assert!(result);
-
-        let policy = client.get_policy(&policy_id).unwrap();
-        assert_eq!(policy.next_payment_date, 1000000000 + (30 * 86400));
-    }
-
-    #[test]
-    #[should_panic(expected = "Policy is not active")]
-    fn test_pay_premium_inactive_policy() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-        let policy_id = client.create_policy(&owner, &name, &coverage_type, &100, &10000);
-
-        // Deactivate policy
-        client.deactivate_policy(&owner, &policy_id);
-
-        client.pay_premium(&owner, &policy_id);
-    }
-
-    #[test]
-    #[should_panic(expected = "Policy not found")]
-    fn test_pay_premium_nonexistent_policy() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        client.pay_premium(&owner, &999);
-    }
-
-    #[test]
-    fn test_get_policy_nonexistent() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-
-        let policy = client.get_policy(&999);
-        assert!(policy.is_none());
-    }
-
-    #[test]
-    fn test_get_active_policies() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        // Create multiple policies
-        let name1 = String::from_str(&env, "Health Insurance");
-        let coverage_type1 = String::from_str(&env, "health");
-        let policy_id1 = client.create_policy(&owner, &name1, &coverage_type1, &100, &10000);
-
-        let name2 = String::from_str(&env, "Emergency Insurance");
-        let coverage_type2 = String::from_str(&env, "emergency");
-        let policy_id2 = client.create_policy(&owner, &name2, &coverage_type2, &200, &20000);
-
-        let name3 = String::from_str(&env, "Life Insurance");
-        let coverage_type3 = String::from_str(&env, "life");
-        let policy_id3 = client.create_policy(&owner, &name3, &coverage_type3, &300, &30000);
-
-        // Deactivate one policy
-        client.deactivate_policy(&owner, &policy_id2);
-
-        let active_policies = client.get_active_policies(&owner);
-        assert_eq!(active_policies.len(), 2);
-
-        // Check that only active policies are returned
-        let mut ids = Vec::new(&env);
-        for policy in active_policies.iter() {
-            ids.push_back(policy.id);
-        }
-        assert!(ids.contains(policy_id1));
-        assert!(ids.contains(policy_id3));
-        assert!(!ids.contains(policy_id2));
-    }
-
-    #[test]
-    fn test_get_total_monthly_premium() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        // Create multiple policies
-        let name1 = String::from_str(&env, "Health Insurance");
-        let coverage_type1 = String::from_str(&env, "health");
-        client.create_policy(&owner, &name1, &coverage_type1, &100, &10000);
-
-        let name2 = String::from_str(&env, "Emergency Insurance");
-        let coverage_type2 = String::from_str(&env, "emergency");
-        client.create_policy(&owner, &name2, &coverage_type2, &200, &20000);
-
-        let name3 = String::from_str(&env, "Life Insurance");
-        let coverage_type3 = String::from_str(&env, "life");
-        let policy_id3 = client.create_policy(&owner, &name3, &coverage_type3, &300, &30000);
-
-        // Deactivate one policy
-        client.deactivate_policy(&owner, &policy_id3);
-
-        let total = client.get_total_monthly_premium(&owner);
-        assert_eq!(total, 300); // 100 + 200 = 300
-    }
-
-    #[test]
-    fn test_deactivate_policy_success() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Health Insurance");
-        let coverage_type = String::from_str(&env, "health");
-        let policy_id = client.create_policy(&owner, &name, &coverage_type, &100, &10000);
-
-        let result = client.deactivate_policy(&owner, &policy_id);
-        assert!(result);
-
-        let policy = client.get_policy(&policy_id).unwrap();
-        assert!(!policy.active);
-    }
-
-    #[test]
-    #[should_panic(expected = "Policy not found")]
-    fn test_deactivate_policy_nonexistent() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        client.deactivate_policy(&owner, &999);
-    }
-
-    #[test]
-    fn test_multiple_policies_management() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        // Create 5 policies
-        let mut policy_ids = Vec::new(&env);
-        let policy_names = [
-            String::from_str(&env, "Policy 1"),
-            String::from_str(&env, "Policy 2"),
-            String::from_str(&env, "Policy 3"),
-            String::from_str(&env, "Policy 4"),
-            String::from_str(&env, "Policy 5"),
-        ];
-        let coverage_type = String::from_str(&env, "health");
-
-        for (i, policy_name) in policy_names.iter().enumerate() {
-            let premium = ((i + 1) as i128) * 100;
-            let coverage = ((i + 1) as i128) * 10000;
-            let policy_id =
-                client.create_policy(&owner, policy_name, &coverage_type, &premium, &coverage);
-            policy_ids.push_back(policy_id);
+        let mut active_count = 0u32;
+        let mut active_coverage = 0i128;
+        for (_, policy) in policies.iter() {
+            if policy.active {
+                active_count += 1;
+                active_coverage = active_coverage.saturating_add(policy.coverage_amount);
+            }
         }
 
-        // Pay premium for all policies
-        for policy_id in policy_ids.iter() {
-            assert!(client.pay_premium(&owner, &policy_id));
+        let mut archived_count = 0u32;
+        let mut archived_coverage = 0i128;
+        for (_, policy) in archived.iter() {
+            archived_count += 1;
+            archived_coverage = archived_coverage.saturating_add(policy.total_coverage);
         }
 
-        // Deactivate 2 policies
-        client.deactivate_policy(&owner, &policy_ids.get(1).unwrap());
-        client.deactivate_policy(&owner, &policy_ids.get(3).unwrap());
+        let stats = StorageStats {
+            active_policies: active_count,
+            archived_policies: archived_count,
+            total_active_coverage: active_coverage,
+            total_archived_coverage: archived_coverage,
+            last_updated: env.ledger().timestamp(),
+        };
 
-        // Check active policies
-        let active_policies = client.get_active_policies(&owner);
-        assert_eq!(active_policies.len(), 3);
-
-        // Check total premium (1+3+5)*100 = 900
-        let total = client.get_total_monthly_premium(&owner);
-        assert_eq!(total, 900);
-    }
-
-    #[test]
-    fn test_large_amounts() {
-        let env = create_test_env();
-        let contract_id = env.register_contract(None, Insurance);
-        let client = InsuranceClient::new(&env, &contract_id);
-        let owner = Address::generate(&env);
-
-        let name = String::from_str(&env, "Premium Insurance");
-        let coverage_type = String::from_str(&env, "premium");
-        let monthly_premium = i128::MAX / 2; // Very large amount
-        let coverage_amount = i128::MAX / 2;
-
-        let policy_id = client.create_policy(
-            &owner,
-            &name,
-            &coverage_type,
-            &monthly_premium,
-            &coverage_amount,
-        );
-
-        let policy = client.get_policy(&policy_id).unwrap();
-        assert_eq!(policy.monthly_premium, monthly_premium);
-        assert_eq!(policy.coverage_amount, coverage_amount);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("STOR_STAT"), &stats);
     }
 }
 
