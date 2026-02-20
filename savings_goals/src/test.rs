@@ -571,7 +571,12 @@ fn test_lock_goal_success() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Lock Test"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Lock Test"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
     assert!(!client.get_goal(&id).unwrap().locked);
@@ -589,7 +594,12 @@ fn test_unlock_goal_success() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Unlock Test"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Unlock Test"),
+        &1000,
+        &2000000000,
+    );
 
     assert!(client.get_goal(&id).unwrap().locked);
 
@@ -608,7 +618,12 @@ fn test_lock_goal_unauthorized_panics() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Auth Test"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Auth Test"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
 
@@ -626,7 +641,12 @@ fn test_unlock_goal_unauthorized_panics() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Auth Test"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Auth Test"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&other, &id);
 }
@@ -641,7 +661,12 @@ fn test_withdraw_after_lock_fails() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Withdraw Fail"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Withdraw Fail"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
     client.add_to_goal(&user, &id, &500);
@@ -659,7 +684,12 @@ fn test_withdraw_after_unlock_succeeds() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Withdraw Success"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Withdraw Success"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
     client.add_to_goal(&user, &id, &500);
@@ -722,7 +752,12 @@ fn test_add_to_goal_emits_event() {
     env.mock_all_auths();
 
     // Create a goal
-    let goal_id = client.create_goal(&user, &String::from_str(&env, "Medical"), &5000, &1735689600);
+    let goal_id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Medical"),
+        &5000,
+        &1735689600,
+    );
 
     // Get events before adding funds (should be 2 from creation)
     let events_before = env.events().all().len();

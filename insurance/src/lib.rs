@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Env, Map, String, Symbol, Vec,
+    contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Symbol, Vec,
 };
 
 // Event topics
@@ -37,9 +37,6 @@ pub struct PolicyDeactivatedEvent {
     pub name: String,
     pub timestamp: u64,
 }
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Vec,
-};
 
 // Storage TTL constants
 const INSTANCE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
@@ -222,23 +219,6 @@ impl Insurance {
             panic!("Only the policy owner can pay premiums");
         }
 
-            // Emit PremiumPaid event
-            let event = PremiumPaidEvent {
-                policy_id,
-                name: policy.name.clone(),
-                amount: policy.monthly_premium,
-                next_payment_date: policy.next_payment_date,
-                timestamp: env.ledger().timestamp(),
-            };
-            env.events().publish((PREMIUM_PAID,), event);
-
-            policies.set(policy_id, policy);
-            env.storage()
-                .instance()
-                .set(&symbol_short!("POLICIES"), &policies);
-            true
-        } else {
-            false
         if !policy.active {
             panic!("Policy is not active");
         }
@@ -348,24 +328,6 @@ impl Insurance {
             .get(&symbol_short!("POLICIES"))
             .unwrap_or_else(|| Map::new(&env));
 
-        if let Some(mut policy) = policies.get(policy_id) {
-            policy.active = false;
-
-            // Emit PolicyDeactivated event
-            let event = PolicyDeactivatedEvent {
-                policy_id,
-                name: policy.name.clone(),
-                timestamp: env.ledger().timestamp(),
-            };
-            env.events().publish((POLICY_DEACTIVATED,), event);
-
-            policies.set(policy_id, policy);
-            env.storage()
-                .instance()
-                .set(&symbol_short!("POLICIES"), &policies);
-            true
-        } else {
-            false
         let mut policy = policies.get(policy_id).expect("Policy not found");
 
         // Access control: verify caller is the owner
@@ -661,16 +623,19 @@ impl Insurance {
 #[cfg(test)]
 mod test {
     use super::*;
-    use soroban_sdk::testutils::Events;
+    use soroban_sdk::testutils::{Address as _, Events};
 
     #[test]
     fn test_create_policy_emits_event() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
 
         // Create a policy
         let policy_id = client.create_policy(
+            &owner,
             &String::from_str(&env, "Health Insurance"),
             &String::from_str(&env, "health"),
             &100,
@@ -680,17 +645,20 @@ mod test {
 
         // Verify event was emitted
         let events = env.events().all();
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
     }
 
     #[test]
     fn test_pay_premium_emits_event() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
 
         // Create a policy
         let policy_id = client.create_policy(
+            &owner,
             &String::from_str(&env, "Emergency Coverage"),
             &String::from_str(&env, "emergency"),
             &75,
@@ -701,7 +669,7 @@ mod test {
         let events_before = env.events().all().len();
 
         // Pay premium
-        let result = client.pay_premium(&policy_id);
+        let result = client.pay_premium(&owner, &policy_id);
         assert!(result);
 
         // Verify PremiumPaid event was emitted (1 new event)
@@ -712,11 +680,14 @@ mod test {
     #[test]
     fn test_deactivate_policy_emits_event() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
 
         // Create a policy
         let policy_id = client.create_policy(
+            &owner,
             &String::from_str(&env, "Life Insurance"),
             &String::from_str(&env, "life"),
             &200,
@@ -727,7 +698,7 @@ mod test {
         let events_before = env.events().all().len();
 
         // Deactivate policy
-        let result = client.deactivate_policy(&policy_id);
+        let result = client.deactivate_policy(&owner, &policy_id);
         assert!(result);
 
         // Verify PolicyDeactivated event was emitted (1 new event)
@@ -738,42 +709,50 @@ mod test {
     #[test]
     fn test_multiple_policies_emit_separate_events() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
 
         // Create multiple policies
         client.create_policy(
+            &owner,
             &String::from_str(&env, "Policy 1"),
             &String::from_str(&env, "health"),
             &100,
             &50000,
         );
         client.create_policy(
+            &owner,
             &String::from_str(&env, "Policy 2"),
             &String::from_str(&env, "life"),
             &200,
             &100000,
         );
         client.create_policy(
+            &owner,
             &String::from_str(&env, "Policy 3"),
             &String::from_str(&env, "emergency"),
             &75,
             &25000,
         );
 
-        // Should have 3 PolicyCreated events
+        // Should have 6 events (2 per create_policy)
         let events = env.events().all();
-        assert_eq!(events.len(), 3);
+        assert_eq!(events.len(), 6);
     }
 
     #[test]
     fn test_policy_lifecycle_emits_all_events() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
 
         // Create a policy
         let policy_id = client.create_policy(
+            &owner,
             &String::from_str(&env, "Complete Lifecycle"),
             &String::from_str(&env, "health"),
             &150,
@@ -781,13 +760,13 @@ mod test {
         );
 
         // Pay premium
-        client.pay_premium(&policy_id);
+        client.pay_premium(&owner, &policy_id);
 
         // Deactivate
-        client.deactivate_policy(&policy_id);
+        client.deactivate_policy(&owner, &policy_id);
 
-        // Should have 3 events: Created, PremiumPaid, Deactivated
+        // Should have 4 events: 2 Created + 1 PremiumPaid + 1 Deactivated
         let events = env.events().all();
-        assert_eq!(events.len(), 3);
+        assert_eq!(events.len(), 4);
     }
 }

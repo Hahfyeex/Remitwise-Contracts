@@ -37,7 +37,6 @@ pub struct GoalCompletedEvent {
     pub timestamp: u64,
 }
 
-
 // Storage TTL constants
 const INSTANCE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
 const INSTANCE_BUMP_AMOUNT: u32 = 518400; // ~30 days
@@ -278,7 +277,7 @@ impl SavingsGoalContract {
             .instance()
             .set(&symbol_short!("GOALS"), &goals);
 
-            // Emit FundsAdded event
+        // Emit FundsAdded event
         let funds_event = FundsAddedEvent {
             goal_id,
             amount,
@@ -554,7 +553,10 @@ impl SavingsGoalContract {
     pub fn get_nonce(env: Env, address: Address) -> u64 {
         let nonces: Option<Map<Address, u64>> =
             env.storage().instance().get(&symbol_short!("NONCES"));
-        nonces.as_ref().and_then(|m: &Map<Address, u64>| m.get(address)).unwrap_or(0)
+        nonces
+            .as_ref()
+            .and_then(|m: &Map<Address, u64>| m.get(address))
+            .unwrap_or(0)
     }
 
     /// Export all goals as snapshot for backup/migration.
@@ -1026,5 +1028,5 @@ impl SavingsGoalContract {
     }
 }
 
-
+#[cfg(test)]
 mod test;

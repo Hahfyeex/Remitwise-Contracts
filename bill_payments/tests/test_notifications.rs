@@ -1,13 +1,13 @@
 #![cfg(test)]
 
-use bill_payments::{BillPayments, BillPaymentsClient}; 
-use soroban_sdk::{Env, symbol_short, testutils::Events, TryFromVal, Symbol, Address};
+use bill_payments::{BillPayments, BillPaymentsClient};
 use soroban_sdk::testutils::Address as _;
+use soroban_sdk::{symbol_short, testutils::Events, Address, Env, Symbol, TryFromVal};
 
 #[test]
 fn test_notification_flow() {
     let e = Env::default();
-    
+
     // Register the contract
     let contract_id = e.register_contract(None, BillPayments);
     let client = BillPaymentsClient::new(&e, &contract_id);
@@ -20,12 +20,12 @@ fn test_notification_flow() {
 
     // Create Bill
     let bill_id = client.create_bill(
-        &user, 
-        &soroban_sdk::String::from_str(&e, "Electricity"), 
-        &1000, 
-        &1234567890, 
-        &false, 
-        &0
+        &user,
+        &soroban_sdk::String::from_str(&e, "Electricity"),
+        &1000,
+        &1234567890,
+        &false,
+        &0,
     );
 
     // VERIFY: Get Events
@@ -33,7 +33,7 @@ fn test_notification_flow() {
     assert!(all_events.len() > 0, "No events were emitted!");
 
     let last_event = all_events.last().unwrap();
-    let topics = &last_event.1; 
+    let topics = &last_event.1;
 
     // Convert 'Val' back to Rust types
     let namespace: Symbol = Symbol::try_from_val(&e, &topics.get(0).unwrap()).unwrap();
@@ -52,7 +52,7 @@ fn test_notification_flow() {
     // VERIFY: Check for Payment Event
     let new_events = e.events().all();
     let pay_event = new_events.last().unwrap();
-    let pay_topics = &pay_event.1; 
+    let pay_topics = &pay_event.1;
 
     let pay_category: u32 = u32::try_from_val(&e, &pay_topics.get(1).unwrap()).unwrap();
     let pay_priority: u32 = u32::try_from_val(&e, &pay_topics.get(2).unwrap()).unwrap();
