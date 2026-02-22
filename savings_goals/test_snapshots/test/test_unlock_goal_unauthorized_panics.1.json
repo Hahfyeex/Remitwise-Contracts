@@ -550,7 +550,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Only the goal owner can unlock this goal' from contract function 'Symbol(obj#59)'"
+                  "string": "caught panic 'Only the goal owner can unlock this goal' from contract function 'Symbol(obj#61)'"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"

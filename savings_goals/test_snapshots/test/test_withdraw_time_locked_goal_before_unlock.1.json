@@ -1054,7 +1054,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Goal is time-locked until unlock date' from contract function 'Symbol(obj#215)'"
+                  "string": "caught panic 'Goal is time-locked until unlock date' from contract function 'Symbol(obj#221)'"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"

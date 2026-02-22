@@ -136,12 +136,142 @@ pub enum ScheduleEvent {
 
 const SNAPSHOT_VERSION: u32 = 1;
 const MAX_AUDIT_ENTRIES: u32 = 100;
+const CONTRACT_VERSION: u32 = 1;
 
 #[contract]
 pub struct RemittanceSplit;
 
 #[contractimpl]
 impl RemittanceSplit {
+    fn get_pause_admin(env: &Env) -> Option<Address> {
+        env.storage().instance().get(&symbol_short!("PAUSE_ADM"))
+    }
+    fn get_global_paused(env: &Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&symbol_short!("PAUSED"))
+            .unwrap_or(false)
+    }
+    fn require_not_paused(env: &Env) -> Result<(), RemittanceSplitError> {
+        if Self::get_global_paused(env) {
+            Err(RemittanceSplitError::Unauthorized)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn set_pause_admin(
+        env: Env,
+        caller: Address,
+        new_admin: Address,
+    ) -> Result<(), RemittanceSplitError> {
+        caller.require_auth();
+        let config: SplitConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("CONFIG"))
+            .ok_or(RemittanceSplitError::NotInitialized)?;
+        if config.owner != caller {
+            return Err(RemittanceSplitError::Unauthorized);
+        }
+        env.storage()
+            .instance()
+            .set(&symbol_short!("PAUSE_ADM"), &new_admin);
+        Ok(())
+    }
+    pub fn pause(env: Env, caller: Address) -> Result<(), RemittanceSplitError> {
+        caller.require_auth();
+        let config: SplitConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("CONFIG"))
+            .ok_or(RemittanceSplitError::NotInitialized)?;
+        let admin = Self::get_pause_admin(&env).unwrap_or(config.owner);
+        if admin != caller {
+            return Err(RemittanceSplitError::Unauthorized);
+        }
+        env.storage()
+            .instance()
+            .set(&symbol_short!("PAUSED"), &true);
+        env.events()
+            .publish((symbol_short!("split"), symbol_short!("paused")), ());
+        Ok(())
+    }
+    pub fn unpause(env: Env, caller: Address) -> Result<(), RemittanceSplitError> {
+        caller.require_auth();
+        let config: SplitConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("CONFIG"))
+            .ok_or(RemittanceSplitError::NotInitialized)?;
+        let admin = Self::get_pause_admin(&env).unwrap_or(config.owner);
+        if admin != caller {
+            return Err(RemittanceSplitError::Unauthorized);
+        }
+        env.storage()
+            .instance()
+            .set(&symbol_short!("PAUSED"), &false);
+        env.events()
+            .publish((symbol_short!("split"), symbol_short!("unpaused")), ());
+        Ok(())
+    }
+    pub fn is_paused(env: Env) -> bool {
+        Self::get_global_paused(&env)
+    }
+    pub fn get_version(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&symbol_short!("VERSION"))
+            .unwrap_or(CONTRACT_VERSION)
+    }
+    fn get_upgrade_admin(env: &Env) -> Option<Address> {
+        env.storage().instance().get(&symbol_short!("UPG_ADM"))
+    }
+    pub fn set_upgrade_admin(
+        env: Env,
+        caller: Address,
+        new_admin: Address,
+    ) -> Result<(), RemittanceSplitError> {
+        caller.require_auth();
+        let config: SplitConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("CONFIG"))
+            .ok_or(RemittanceSplitError::NotInitialized)?;
+        if config.owner != caller {
+            return Err(RemittanceSplitError::Unauthorized);
+        }
+        env.storage()
+            .instance()
+            .set(&symbol_short!("UPG_ADM"), &new_admin);
+        Ok(())
+    }
+    pub fn set_version(
+        env: Env,
+        caller: Address,
+        new_version: u32,
+    ) -> Result<(), RemittanceSplitError> {
+        caller.require_auth();
+        let config: SplitConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("CONFIG"))
+            .ok_or(RemittanceSplitError::NotInitialized)?;
+        let admin = Self::get_upgrade_admin(&env).unwrap_or(config.owner);
+        if admin != caller {
+            return Err(RemittanceSplitError::Unauthorized);
+        }
+        let prev = Self::get_version(env.clone());
+        env.storage()
+            .instance()
+            .set(&symbol_short!("VERSION"), &new_version);
+        env.events().publish(
+            (symbol_short!("split"), symbol_short!("upgraded")),
+            (prev, new_version),
+        );
+        Ok(())
+    }
+
     /// Set or update the split percentages used to allocate remittances.
     ///
     /// # Arguments
@@ -170,6 +300,7 @@ impl RemittanceSplit {
         insurance_percent: u32,
     ) -> Result<bool, RemittanceSplitError> {
         owner.require_auth();
+        Self::require_not_paused(&env)?;
         Self::require_nonce(&env, &owner, nonce)?;
 
         let existing: Option<SplitConfig> = env.storage().instance().get(&symbol_short!("CONFIG"));
@@ -246,6 +377,7 @@ impl RemittanceSplit {
         insurance_percent: u32,
     ) -> Result<bool, RemittanceSplitError> {
         caller.require_auth();
+        Self::require_not_paused(&env)?;
         Self::require_nonce(&env, &caller, nonce)?;
 
         let mut config: SplitConfig = env
@@ -357,7 +489,7 @@ impl RemittanceSplit {
             .checked_mul(s2)
             .and_then(|n| n.checked_div(100))
             .ok_or(RemittanceSplitError::Overflow)?;
-        let insurance = total_amount
+        let _insurance = total_amount
             .checked_sub(spending)
             .and_then(|n| n.checked_sub(savings))
             .and_then(|n| n.checked_sub(bills))

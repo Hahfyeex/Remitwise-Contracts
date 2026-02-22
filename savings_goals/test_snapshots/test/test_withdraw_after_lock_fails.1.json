@@ -1188,7 +1188,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Cannot withdraw from a locked goal' from contract function 'Symbol(obj#229)'"
+                  "string": "caught panic 'Cannot withdraw from a locked goal' from contract function 'Symbol(obj#237)'"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"

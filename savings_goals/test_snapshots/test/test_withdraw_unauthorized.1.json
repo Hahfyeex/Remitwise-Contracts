@@ -1007,7 +1007,7 @@
             "data": {
               "vec": [
                 {
-                  "string": "caught panic 'Only the goal owner can withdraw funds' from contract function 'Symbol(obj#173)'"
+                  "string": "caught panic 'Only the goal owner can withdraw funds' from contract function 'Symbol(obj#179)'"
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"

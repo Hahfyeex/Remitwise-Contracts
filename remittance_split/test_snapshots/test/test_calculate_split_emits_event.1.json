@@ -134,6 +134,14 @@
                             },
                             {
                               "key": {
+                                "symbol": "initialized"
+                              },
+                              "val": {
+                                "bool": true
+                              }
+                            },
+                            {
+                              "key": {
                                 "symbol": "insurance_percent"
                               },
                               "val": {
