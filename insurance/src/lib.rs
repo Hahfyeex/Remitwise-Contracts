@@ -58,7 +58,6 @@ const INSTANCE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
 const INSTANCE_BUMP_AMOUNT: u32 = 518400; // ~30 days
 
 const CONTRACT_VERSION: u32 = 1;
-const MAX_BATCH_SIZE: u32 = 50;
 
 pub mod pause_functions {
     use soroban_sdk::{symbol_short, Symbol};
