@@ -214,6 +214,43 @@ fn test_get_active_policies() {
 }
 
 #[test]
+fn test_get_active_policies_excludes_deactivated() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Create policy 1 and policy 2 for the same owner
+    let policy_id_1 = client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 1"),
+        &String::from_str(&env, "Type 1"),
+        &100,
+        &1000,
+    );
+    let policy_id_2 = client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 2"),
+        &String::from_str(&env, "Type 2"),
+        &200,
+        &2000,
+    );
+
+    // Deactivate policy 1
+    client.deactivate_policy(&owner, &policy_id_1);
+
+    // get_active_policies must return only the still-active policy
+    let active = client.get_active_policies(&owner);
+    assert_eq!(active.len(), 1, "get_active_policies must return exactly one policy");
+    let only = active.get(0).unwrap();
+    assert_eq!(only.id, policy_id_2, "the returned policy must be the active one (policy_id_2)");
+    assert!(only.active, "returned policy must have active == true");
+    // Deactivated policy_id_1 is not in the list (implied by len() == 1 and only.id == policy_id_2)
+}
+
+#[test]
 fn test_get_total_monthly_premium() {
     let env = Env::default();
     let contract_id = env.register_contract(None, Insurance);
