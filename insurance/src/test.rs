@@ -51,7 +51,6 @@ fn test_create_policy() {
 }
 
 #[test]
-#[should_panic(expected = "Monthly premium must be positive")]
 fn test_create_policy_invalid_premium() {
     let env = Env::default();
     let contract_id = env.register_contract(None, Insurance);
@@ -60,17 +59,17 @@ fn test_create_policy_invalid_premium() {
 
     env.mock_all_auths();
 
-    client.create_policy(
+    let result = client.try_create_policy(
         &owner,
         &String::from_str(&env, "Bad"),
         &String::from_str(&env, "Type"),
         &0,
         &10000,
     );
+    assert_eq!(result, Err(Ok(InsuranceError::InvalidAmount)));
 }
 
 #[test]
-#[should_panic(expected = "Coverage amount must be positive")]
 fn test_create_policy_invalid_coverage() {
     let env = Env::default();
     let contract_id = env.register_contract(None, Insurance);
@@ -79,13 +78,14 @@ fn test_create_policy_invalid_coverage() {
 
     env.mock_all_auths();
 
-    client.create_policy(
+    let result = client.try_create_policy(
         &owner,
         &String::from_str(&env, "Bad"),
         &String::from_str(&env, "Type"),
         &100,
         &0,
     );
+    assert_eq!(result, Err(Ok(InsuranceError::InvalidAmount)));
 }
 
 #[test]
@@ -126,7 +126,6 @@ fn test_pay_premium() {
 }
 
 #[test]
-#[should_panic(expected = "Only the policy owner can pay premiums")]
 fn test_pay_premium_unauthorized() {
     let env = Env::default();
     let contract_id = env.register_contract(None, Insurance);
@@ -145,7 +144,8 @@ fn test_pay_premium_unauthorized() {
     );
 
     // unauthorized payer
-    client.pay_premium(&other, &policy_id);
+    let result = client.try_pay_premium(&other, &policy_id);
+    assert_eq!(result, Err(Ok(InsuranceError::Unauthorized)));
 }
 
 #[test]
@@ -211,6 +211,70 @@ fn test_get_active_policies() {
     assert_eq!(active.len(), 2);
 
     // Check specific IDs if needed, but length 2 confirms one was filtered
+}
+
+#[test]
+fn test_get_policies_for_owner() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner = Address::generate(&env);
+    let other = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Create 3 policies for owner
+    client.create_policy(
+        &owner,
+        &String::from_str(&env, "P1"),
+        &String::from_str(&env, "T1"),
+        &100,
+        &1000,
+    );
+    let p2 = client.create_policy(
+        &owner,
+        &String::from_str(&env, "P2"),
+        &String::from_str(&env, "T2"),
+        &200,
+        &2000,
+    );
+    client.create_policy(
+        &owner,
+        &String::from_str(&env, "P3"),
+        &String::from_str(&env, "T3"),
+        &300,
+        &3000,
+    );
+
+    // Create 1 policy for other
+    client.create_policy(
+        &other,
+        &String::from_str(&env, "Other P"),
+        &String::from_str(&env, "Type"),
+        &500,
+        &5000,
+    );
+
+    // Deactivate P2
+    client.deactivate_policy(&owner, &p2);
+
+    // get_active_policies should return 2
+    let active = client.get_active_policies(&owner);
+    assert_eq!(active.len(), 2);
+
+    // get_policies_for_owner should return all 3 for owner
+    let all = client.get_policies_for_owner(&owner);
+    assert_eq!(all.len(), 3);
+
+    // verify p2 is in the list and is inactive
+    let mut found_p2 = false;
+    for policy in all.iter() {
+        if policy.id == p2 {
+            found_p2 = true;
+            assert!(!policy.active);
+        }
+    }
+    assert!(found_p2);
 }
 
 #[test]
@@ -581,7 +645,7 @@ fn test_deactivate_policy_emits_event() {
 
     let expected_topics = vec![
         &env,
-        symbol_short!("insuranc").into_val(&env), // Note: contract says symbol_short!("insuranc")
+        symbol_short!("insure").into_val(&env),
         InsuranceEvent::PolicyDeactivated.into_val(&env),
     ];
 

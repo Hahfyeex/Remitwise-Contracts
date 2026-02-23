@@ -83,8 +83,20 @@ Gets all active policies for an owner.
 **Parameters:**
 
 - `owner`: Address of the policy owner
+- `env`: Environment
 
 **Returns:** Vector of active InsurancePolicy structs
+
+#### `get_policies_for_owner(env, owner) -> Vec<InsurancePolicy>`
+
+Gets all policies (including inactive) for an owner.
+
+**Parameters:**
+
+- `owner`: Address of the policy owner
+- `env`: Environment
+
+**Returns:** Vector of all InsurancePolicy structs belonging to the owner
 
 #### `get_total_monthly_premium(env, owner) -> i128`
 
@@ -140,6 +152,9 @@ let active_policies = insurance::get_active_policies(env, user_address);
 
 // Get total monthly premium
 let total_premium = insurance::get_total_monthly_premium(env, user_address);
+
+// Get all policies (history)
+let all_policies = insurance::get_policies_for_owner(env, user_address);
 ```
 
 ## Events

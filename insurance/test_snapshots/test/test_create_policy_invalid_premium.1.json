@@ -96,10 +96,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Life"
+                  "string": "Bad"
                 },
                 {
-                  "string": "Health"
+                  "string": "Type"
                 },
                 {
                   "i128": {
@@ -201,10 +201,10 @@
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                     },
                     {
-                      "string": "Life"
+                      "string": "Bad"
                     },
                     {
-                      "string": "Health"
+                      "string": "Type"
                     },
                     {
                       "i128": {

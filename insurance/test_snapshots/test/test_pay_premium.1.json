@@ -358,6 +358,81 @@
           "v0": {
             "topics": [
               {
+                "symbol": "created"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "coverage_amount"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 10000
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "coverage_type"
+                  },
+                  "val": {
+                    "string": "Type"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "monthly_premium"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 100
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "name"
+                  },
+                  "val": {
+                    "string": "Policy"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "policy_id"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "timestamp"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
                 "symbol": "insure"
               },
               {
@@ -557,6 +632,70 @@
                 },
                 {
                   "u32": 1
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "amount"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 100
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "name"
+                  },
+                  "val": {
+                    "string": "Policy"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "next_payment_date"
+                  },
+                  "val": {
+                    "u64": 2593000
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "policy_id"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "timestamp"
+                  },
+                  "val": {
+                    "u64": 1000
+                  }
                 }
               ]
             }

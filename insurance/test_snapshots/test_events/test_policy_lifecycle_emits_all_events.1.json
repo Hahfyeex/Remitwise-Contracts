@@ -17,22 +17,44 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Health Policy"
+                  "string": "Complete Lifecycle"
                 },
                 {
-                  "string": "Health"
+                  "string": "health"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 100
+                    "lo": 150
                   }
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 75000
                   }
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
+    [
+      [
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+              "function_name": "pay_premium",
+              "args": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "u32": 1
                 }
               ]
             }
@@ -132,7 +154,7 @@
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 10000
+                                        "lo": 75000
                                       }
                                     }
                                   },
@@ -141,7 +163,7 @@
                                       "symbol": "coverage_type"
                                     },
                                     "val": {
-                                      "string": "Health"
+                                      "string": "health"
                                     }
                                   },
                                   {
@@ -159,7 +181,7 @@
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 100
+                                        "lo": 150
                                       }
                                     }
                                   },
@@ -168,7 +190,7 @@
                                       "symbol": "name"
                                     },
                                     "val": {
-                                      "string": "Health Policy"
+                                      "string": "Complete Lifecycle"
                                     }
                                   },
                                   {
@@ -231,6 +253,39 @@
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 801925984706572462
+                  }
+                },
+                "durability": "temporary",
+                "val": "void"
+              }
+            },
+            "ext": "v0"
+          },
+          6311999
+        ]
+      ],
+      [
+        {
+          "contract_data": {
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "key": {
+              "ledger_key_nonce": {
+                "nonce": 1033654523790656264
+              }
+            },
+            "durability": "temporary"
+          }
+        },
+        [
+          {
+            "last_modified_ledger_seq": 0,
+            "data": {
+              "contract_data": {
+                "ext": "v0",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "key": {
+                  "ledger_key_nonce": {
+                    "nonce": 1033654523790656264
                   }
                 },
                 "durability": "temporary",
@@ -323,21 +378,21 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Health Policy"
+                  "string": "Complete Lifecycle"
                 },
                 {
-                  "string": "Health"
+                  "string": "health"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 100
+                    "lo": 150
                   }
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 75000
                   }
                 }
               ]
@@ -368,7 +423,7 @@
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 10000
+                      "lo": 75000
                     }
                   }
                 },
@@ -377,7 +432,7 @@
                     "symbol": "coverage_type"
                   },
                   "val": {
-                    "string": "Health"
+                    "string": "health"
                   }
                 },
                 {
@@ -387,7 +442,7 @@
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 100
+                      "lo": 150
                     }
                   }
                 },
@@ -396,7 +451,7 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "string": "Health Policy"
+                    "string": "Complete Lifecycle"
                   }
                 },
                 {
@@ -494,6 +549,160 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
+                "symbol": "pay_premium"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "u32": 1
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "paid"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "amount"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 150
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "name"
+                  },
+                  "val": {
+                    "string": "Complete Lifecycle"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "next_payment_date"
+                  },
+                  "val": {
+                    "u64": 2592000
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "policy_id"
+                  },
+                  "val": {
+                    "u32": 1
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "timestamp"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "insure"
+              },
+              {
+                "vec": [
+                  {
+                    "symbol": "PremiumPaid"
+                  }
+                ]
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 1
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "pay_premium"
+              }
+            ],
+            "data": {
+              "bool": true
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
                 "symbol": "deactivate_policy"
               }
             ],
@@ -531,7 +740,7 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "string": "Health Policy"
+                    "string": "Complete Lifecycle"
                   }
                 },
                 {

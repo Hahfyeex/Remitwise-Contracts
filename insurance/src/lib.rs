@@ -504,6 +504,29 @@ impl Insurance {
         result
     }
 
+    /// Get all policies (including inactive) for a specific owner
+    ///
+    /// # Arguments
+    /// * `owner` - Address of the policy owner
+    ///
+    /// # Returns
+    /// Vec of all InsurancePolicy structs belonging to the owner
+    pub fn get_policies_for_owner(env: Env, owner: Address) -> Vec<InsurancePolicy> {
+        let policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut result = Vec::new(&env);
+        for (_, policy) in policies.iter() {
+            if policy.owner == owner {
+                result.push_back(policy);
+            }
+        }
+        result
+    }
+
     /// Get total monthly premium for all active policies of an owner
     ///
     /// # Arguments
@@ -870,7 +893,10 @@ impl Insurance {
 }
 
 #[cfg(test)]
-mod test {
+mod test;
+
+#[cfg(test)]
+mod test_events {
     use super::*;
     use soroban_sdk::testutils::{Address as _, Events};
 

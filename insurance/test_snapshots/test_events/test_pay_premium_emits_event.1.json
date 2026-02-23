@@ -17,21 +17,21 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Health Policy"
+                  "string": "Emergency Coverage"
                 },
                 {
-                  "string": "Health"
+                  "string": "emergency"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 100
+                    "lo": 75
                   }
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 25000
                   }
                 }
               ]
@@ -48,7 +48,7 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "deactivate_policy",
+              "function_name": "pay_premium",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
@@ -122,7 +122,7 @@
                                       "symbol": "active"
                                     },
                                     "val": {
-                                      "bool": false
+                                      "bool": true
                                     }
                                   },
                                   {
@@ -132,7 +132,7 @@
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 10000
+                                        "lo": 25000
                                       }
                                     }
                                   },
@@ -141,7 +141,7 @@
                                       "symbol": "coverage_type"
                                     },
                                     "val": {
-                                      "string": "Health"
+                                      "string": "emergency"
                                     }
                                   },
                                   {
@@ -159,7 +159,7 @@
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 100
+                                        "lo": 75
                                       }
                                     }
                                   },
@@ -168,7 +168,7 @@
                                       "symbol": "name"
                                     },
                                     "val": {
-                                      "string": "Health Policy"
+                                      "string": "Emergency Coverage"
                                     }
                                   },
                                   {
@@ -323,21 +323,21 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Health Policy"
+                  "string": "Emergency Coverage"
                 },
                 {
-                  "string": "Health"
+                  "string": "emergency"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 100
+                    "lo": 75
                   }
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 25000
                   }
                 }
               ]
@@ -368,7 +368,7 @@
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 10000
+                      "lo": 25000
                     }
                   }
                 },
@@ -377,7 +377,7 @@
                     "symbol": "coverage_type"
                   },
                   "val": {
-                    "string": "Health"
+                    "string": "emergency"
                   }
                 },
                 {
@@ -387,7 +387,7 @@
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 100
+                      "lo": 75
                     }
                   }
                 },
@@ -396,7 +396,7 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "string": "Health Policy"
+                    "string": "Emergency Coverage"
                   }
                 },
                 {
@@ -494,7 +494,7 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "deactivate_policy"
+                "symbol": "pay_premium"
               }
             ],
             "data": {
@@ -521,17 +521,36 @@
           "v0": {
             "topics": [
               {
-                "symbol": "deactive"
+                "symbol": "paid"
               }
             ],
             "data": {
               "map": [
                 {
                   "key": {
+                    "symbol": "amount"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 75
+                    }
+                  }
+                },
+                {
+                  "key": {
                     "symbol": "name"
                   },
                   "val": {
-                    "string": "Health Policy"
+                    "string": "Emergency Coverage"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "next_payment_date"
+                  },
+                  "val": {
+                    "u64": 2592000
                   }
                 },
                 {
@@ -571,7 +590,7 @@
               {
                 "vec": [
                   {
-                    "symbol": "PolicyDeactivated"
+                    "symbol": "PremiumPaid"
                   }
                 ]
               }
@@ -603,7 +622,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "deactivate_policy"
+                "symbol": "pay_premium"
               }
             ],
             "data": {

@@ -17,10 +17,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Health Policy"
+                  "string": "Health Insurance"
                 },
                 {
-                  "string": "Health"
+                  "string": "health"
                 },
                 {
                   "i128": {
@@ -31,30 +31,8 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 50000
                   }
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "deactivate_policy",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "u32": 1
                 }
               ]
             }
@@ -122,7 +100,7 @@
                                       "symbol": "active"
                                     },
                                     "val": {
-                                      "bool": false
+                                      "bool": true
                                     }
                                   },
                                   {
@@ -132,7 +110,7 @@
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 10000
+                                        "lo": 50000
                                       }
                                     }
                                   },
@@ -141,7 +119,7 @@
                                       "symbol": "coverage_type"
                                     },
                                     "val": {
-                                      "string": "Health"
+                                      "string": "health"
                                     }
                                   },
                                   {
@@ -168,7 +146,7 @@
                                       "symbol": "name"
                                     },
                                     "val": {
-                                      "string": "Health Policy"
+                                      "string": "Health Insurance"
                                     }
                                   },
                                   {
@@ -244,39 +222,6 @@
       ],
       [
         {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "ledger_key_nonce": {
-                "nonce": 5541220902715666415
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 5541220902715666415
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          6311999
-        ]
-      ],
-      [
-        {
           "contract_code": {
             "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
           }
@@ -323,10 +268,10 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Health Policy"
+                  "string": "Health Insurance"
                 },
                 {
-                  "string": "Health"
+                  "string": "health"
                 },
                 {
                   "i128": {
@@ -337,7 +282,7 @@
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 50000
                   }
                 }
               ]
@@ -368,7 +313,7 @@
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 10000
+                      "lo": 50000
                     }
                   }
                 },
@@ -377,7 +322,7 @@
                     "symbol": "coverage_type"
                   },
                   "val": {
-                    "string": "Health"
+                    "string": "health"
                   }
                 },
                 {
@@ -396,7 +341,7 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "string": "Health Policy"
+                    "string": "Health Insurance"
                   }
                 },
                 {
@@ -473,141 +418,6 @@
             ],
             "data": {
               "u32": 1
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
-              },
-              {
-                "symbol": "deactivate_policy"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "u32": 1
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "deactive"
-              }
-            ],
-            "data": {
-              "map": [
-                {
-                  "key": {
-                    "symbol": "name"
-                  },
-                  "val": {
-                    "string": "Health Policy"
-                  }
-                },
-                {
-                  "key": {
-                    "symbol": "policy_id"
-                  },
-                  "val": {
-                    "u32": 1
-                  }
-                },
-                {
-                  "key": {
-                    "symbol": "timestamp"
-                  },
-                  "val": {
-                    "u64": 0
-                  }
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "insure"
-              },
-              {
-                "vec": [
-                  {
-                    "symbol": "PolicyDeactivated"
-                  }
-                ]
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u32": 1
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "deactivate_policy"
-              }
-            ],
-            "data": {
-              "bool": true
             }
           }
         }

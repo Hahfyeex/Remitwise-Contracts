@@ -96,21 +96,21 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Bad"
+                  "string": "Life"
                 },
                 {
-                  "string": "Type"
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 100
-                  }
+                  "string": "Health"
                 },
                 {
                   "i128": {
                     "hi": 0,
                     "lo": 0
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 10000
                   }
                 }
               ]
@@ -201,21 +201,21 @@
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                     },
                     {
-                      "string": "Bad"
+                      "string": "Life"
                     },
                     {
-                      "string": "Type"
-                    },
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 100
-                      }
+                      "string": "Health"
                     },
                     {
                       "i128": {
                         "hi": 0,
                         "lo": 0
+                      }
+                    },
+                    {
+                      "i128": {
+                        "hi": 0,
+                        "lo": 10000
                       }
                     }
                   ]
