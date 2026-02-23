@@ -242,6 +242,164 @@ fn test_get_total_monthly_premium() {
 }
 
 #[test]
+fn test_get_total_monthly_premium_zero_policies() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Fresh address with no policies
+    let total = client.get_total_monthly_premium(&owner);
+    assert_eq!(total, 0);
+}
+
+#[test]
+fn test_get_total_monthly_premium_one_policy() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Create one policy with monthly_premium = 500
+    client.create_policy(
+        &owner,
+        &String::from_str(&env, "Single Policy"),
+        &String::from_str(&env, "health"),
+        &500,
+        &10000,
+    );
+
+    let total = client.get_total_monthly_premium(&owner);
+    assert_eq!(total, 500);
+}
+
+#[test]
+fn test_get_total_monthly_premium_multiple_active_policies() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Create three policies with premiums 100, 200, 300
+    client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 1"),
+        &String::from_str(&env, "health"),
+        &100,
+        &1000,
+    );
+    client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 2"),
+        &String::from_str(&env, "life"),
+        &200,
+        &2000,
+    );
+    client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 3"),
+        &String::from_str(&env, "emergency"),
+        &300,
+        &3000,
+    );
+
+    let total = client.get_total_monthly_premium(&owner);
+    assert_eq!(total, 600); // 100 + 200 + 300
+}
+
+#[test]
+fn test_get_total_monthly_premium_deactivated_policy_excluded() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Create two policies with premiums 100 and 200
+    let policy1 = client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 1"),
+        &String::from_str(&env, "health"),
+        &100,
+        &1000,
+    );
+    let policy2 = client.create_policy(
+        &owner,
+        &String::from_str(&env, "Policy 2"),
+        &String::from_str(&env, "life"),
+        &200,
+        &2000,
+    );
+
+    // Verify total includes both policies initially
+    let total_initial = client.get_total_monthly_premium(&owner);
+    assert_eq!(total_initial, 300); // 100 + 200
+
+    // Deactivate the first policy
+    client.deactivate_policy(&owner, &policy1);
+
+    // Verify total only includes the active policy
+    let total_after_deactivation = client.get_total_monthly_premium(&owner);
+    assert_eq!(total_after_deactivation, 200); // Only policy 2
+}
+
+#[test]
+fn test_get_total_monthly_premium_different_owner_isolation() {
+    let env = Env::default();
+    let contract_id = env.register_contract(None, Insurance);
+    let client = InsuranceClient::new(&env, &contract_id);
+    let owner_a = Address::generate(&env);
+    let owner_b = Address::generate(&env);
+
+    env.mock_all_auths();
+
+    // Create policies for owner_a
+    client.create_policy(
+        &owner_a,
+        &String::from_str(&env, "Policy A1"),
+        &String::from_str(&env, "health"),
+        &100,
+        &1000,
+    );
+    client.create_policy(
+        &owner_a,
+        &String::from_str(&env, "Policy A2"),
+        &String::from_str(&env, "life"),
+        &200,
+        &2000,
+    );
+
+    // Create policies for owner_b
+    client.create_policy(
+        &owner_b,
+        &String::from_str(&env, "Policy B1"),
+        &String::from_str(&env, "emergency"),
+        &300,
+        &3000,
+    );
+
+    // Verify owner_a's total only includes their policies
+    let total_a = client.get_total_monthly_premium(&owner_a);
+    assert_eq!(total_a, 300); // 100 + 200
+
+    // Verify owner_b's total only includes their policies
+    let total_b = client.get_total_monthly_premium(&owner_b);
+    assert_eq!(total_b, 300); // 300
+
+    // Verify no cross-owner leakage
+    assert_ne!(total_a, 0); // owner_a has policies
+    assert_ne!(total_b, 0); // owner_b has policies
+    assert_eq!(total_a, total_b); // Both have same total but different policies
+}
+
+#[test]
 fn test_multiple_premium_payments() {
     let env = Env::default();
     let contract_id = env.register_contract(None, Insurance);
