@@ -1198,4 +1198,56 @@ mod test {
         assert_ne!(total_b, 0); // owner_b has policies
         assert_eq!(total_a, total_b); // Both have same total but different policies
     }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Test: pay_premium after deactivate_policy (#104)
+    // ──────────────────────────────────────────────────────────────────
+
+    /// After deactivating a policy, `pay_premium` must be rejected with
+    /// `PolicyInactive`. The policy must remain inactive and no state
+    /// change should occur from the failed call.
+    #[test]
+    fn test_pay_premium_after_deactivate() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, Insurance);
+        let client = InsuranceClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
+
+        // 1. Create a policy
+        let policy_id = client.create_policy(
+            &owner,
+            &String::from_str(&env, "Health Plan"),
+            &String::from_str(&env, "health"),
+            &150,
+            &50000,
+        );
+
+        // Sanity: policy should be active after creation
+        let policy_before = client.get_policy(&policy_id).unwrap();
+        assert!(policy_before.active);
+
+        // 2. Deactivate the policy
+        let deactivated = client.deactivate_policy(&owner, &policy_id);
+        assert!(deactivated);
+
+        // Confirm it is now inactive
+        let policy_after_deactivate = client.get_policy(&policy_id).unwrap();
+        assert!(!policy_after_deactivate.active);
+
+        // Capture next_payment_date before the failed pay attempt
+        let next_payment_before = policy_after_deactivate.next_payment_date;
+
+        // 3. Attempt to pay premium — must fail with PolicyInactive
+        let result = client.try_pay_premium(&owner, &policy_id);
+        assert_eq!(result, Err(Ok(InsuranceError::PolicyInactive)));
+
+        // 4. Verify no state change occurred from the failed call
+        let policy_after_failed_pay = client.get_policy(&policy_id).unwrap();
+        assert!(!policy_after_failed_pay.active);
+        assert_eq!(
+            policy_after_failed_pay.next_payment_date,
+            next_payment_before
+        );
+    }
 }
