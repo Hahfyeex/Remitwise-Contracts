@@ -78,6 +78,8 @@ pub enum TransactionData {
 pub struct FamilyMember {
     pub address: Address,
     pub role: FamilyRole,
+    /// Per-transaction cap in stroops. 0 = unlimited.
+    pub spending_limit: i128,
     pub added_at: u64,
 }
 
@@ -101,6 +103,26 @@ pub enum EmergencyEvent {
     ModeOff,
     TransferInit,
     TransferExec,
+}
+
+/// Emitted by add_member.
+#[contracttype]
+#[derive(Clone)]
+pub struct MemberAddedEvent {
+    pub member: Address,
+    pub role: FamilyRole,
+    pub spending_limit: i128,
+    pub timestamp: u64,
+}
+
+/// Emitted by update_spending_limit.
+#[contracttype]
+#[derive(Clone)]
+pub struct SpendingLimitUpdatedEvent {
+    pub member: Address,
+    pub old_limit: i128,
+    pub new_limit: i128,
+    pub timestamp: u64,
 }
 
 /// Archived transaction - compressed record with essential fields only
@@ -208,6 +230,7 @@ impl FamilyWallet {
             FamilyMember {
                 address: owner.clone(),
                 role: FamilyRole::Owner,
+                spending_limit: 0,
                 added_at: timestamp,
             },
         );
@@ -219,6 +242,7 @@ impl FamilyWallet {
                 FamilyMember {
                     address: member_addr.clone(),
                     role: FamilyRole::Member,
+                    spending_limit: 0,
                     added_at: timestamp,
                 },
             );
@@ -283,6 +307,140 @@ impl FamilyWallet {
             .set(&symbol_short!("EM_LAST"), &0u64);
 
         true
+    }
+    pub fn add_member(
+        env: Env,
+        admin: Address,
+        member_address: Address,
+        role: FamilyRole,
+        spending_limit: i128,
+    ) -> Result<bool, Error> {
+        admin.require_auth();
+        Self::require_not_paused(&env);
+
+        if role == FamilyRole::Owner {
+            return Err(Error::InvalidRole);
+        }
+        if !Self::is_owner_or_admin(&env, &admin) {
+            return Err(Error::Unauthorized);
+        }
+        if spending_limit < 0 {
+            return Err(Error::InvalidSpendingLimit);
+        }
+
+        let mut members: Map<Address, FamilyMember> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("MEMBERS"))
+            .expect("Wallet not initialized");
+
+        if members.get(member_address.clone()).is_some() {
+            return Err(Error::InvalidRole); // member already exists
+        }
+
+        Self::extend_instance_ttl(&env);
+
+        let now = env.ledger().timestamp();
+        members.set(
+            member_address.clone(),
+            FamilyMember {
+                address: member_address.clone(),
+                role: role.clone(),
+                spending_limit,
+                added_at: now,
+            },
+        );
+        env.storage()
+            .instance()
+            .set(&symbol_short!("MEMBERS"), &members);
+
+        env.events().publish(
+            (symbol_short!("added"), symbol_short!("member")),
+            MemberAddedEvent {
+                member: member_address,
+                role,
+                spending_limit,
+                timestamp: now,
+            },
+        );
+
+        Ok(true)
+    }
+
+    pub fn get_member(env: Env, member_address: Address) -> Option<FamilyMember> {
+        let members: Map<Address, FamilyMember> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("MEMBERS"))
+            .expect("Wallet not initialized");
+
+        members.get(member_address)
+    }
+
+    pub fn update_spending_limit(
+        env: Env,
+        caller: Address,
+        member_address: Address,
+        new_limit: i128,
+    ) -> Result<bool, Error> {
+        caller.require_auth();
+        Self::require_not_paused(&env);
+
+        if !Self::is_owner_or_admin(&env, &caller) {
+            return Err(Error::Unauthorized);
+        }
+        if new_limit < 0 {
+            return Err(Error::InvalidSpendingLimit);
+        }
+
+        let mut members: Map<Address, FamilyMember> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("MEMBERS"))
+            .expect("Wallet not initialized");
+
+        let mut record = members
+            .get(member_address.clone())
+            .ok_or(Error::MemberNotFound)?;
+
+        let old_limit = record.spending_limit;
+        record.spending_limit = new_limit;
+        members.set(member_address.clone(), record);
+
+        Self::extend_instance_ttl(&env);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("MEMBERS"), &members);
+
+        let now = env.ledger().timestamp();
+        env.events().publish(
+            (symbol_short!("updated"), symbol_short!("limit")),
+            SpendingLimitUpdatedEvent {
+                member: member_address,
+                old_limit,
+                new_limit,
+                timestamp: now,
+            },
+        );
+
+        Ok(true)
+    }
+
+    pub fn check_spending_limit(env: Env, member_address: Address, amount: i128) -> bool {
+        if amount < 0 {
+            return false;
+        }
+
+        let members: Map<Address, FamilyMember> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("MEMBERS"))
+            .expect("Wallet not initialized");
+
+        match members.get(member_address) {
+            None => false,
+            Some(record) => record.spending_limit == 0 || amount <= record.spending_limit,
+        }
     }
 
     /// Configure multi-signature settings for a transaction type
@@ -740,6 +898,7 @@ impl FamilyWallet {
             FamilyMember {
                 address: member.clone(),
                 role,
+                spending_limit: 0,
                 added_at: timestamp,
             },
         );
@@ -850,6 +1009,56 @@ impl FamilyWallet {
         } else {
             Some(ts)
         }
+    }
+    /// Check if a caller has permission to spend a given amount
+    ///
+    /// This function validates spending limits for orchestrator integration.
+    /// It checks the caller's role and compares the amount against the configured
+    /// spending limit for large withdrawals.
+    ///
+    /// # Arguments
+    /// * `env` - The contract environment
+    /// * `caller` - Address requesting permission to spend
+    /// * `amount` - Amount to validate
+    ///
+    /// # Returns
+    /// true if the caller can spend the amount, false otherwise
+    ///
+    /// # Logic
+    /// - Owner and Admin: Can spend any amount
+    /// - Members: Can spend up to the configured spending limit
+    /// - Non-members: Cannot spend (returns false)
+    pub fn check_spending_limit(env: Env, caller: Address, amount: i128) -> bool {
+        // Get members map
+        let members: Map<Address, FamilyMember> =
+            match env.storage().instance().get(&symbol_short!("MEMBERS")) {
+                Some(m) => m,
+                None => return false, // Wallet not initialized
+            };
+
+        // Check if caller is a member
+        let member = match members.get(caller.clone()) {
+            Some(m) => m,
+            None => return false, // Not a family member
+        };
+
+        // Owner and Admin have unlimited spending
+        if member.role == FamilyRole::Owner || member.role == FamilyRole::Admin {
+            return true;
+        }
+
+        // For regular members, check against spending limit
+        let config: MultiSigConfig = match env
+            .storage()
+            .instance()
+            .get(&Self::get_config_key(TransactionType::LargeWithdrawal))
+        {
+            Some(c) => c,
+            None => return false, // Config not found
+        };
+
+        // Return true if amount is within spending limit
+        amount <= config.spending_limit
     }
 
     /// Archive old executed transactions before the specified timestamp.
@@ -1173,6 +1382,7 @@ impl FamilyWallet {
                 FamilyMember {
                     address: item.address.clone(),
                     role: item.role.clone(),
+                    spending_limit: 0,
                     added_at: timestamp,
                 },
             );

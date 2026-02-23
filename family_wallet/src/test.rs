@@ -875,3 +875,266 @@ fn test_cleanup_unauthorized() {
     // Member (not owner/admin) tries to cleanup
     client.cleanup_expired_pending(&member1);
 }
+
+// ============================================
+// Issue #69 — add_member / get_member /
+// update_spending_limit / check_spending_limit
+// ============================================
+
+#[test]
+fn test_add_member_and_get_member() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let alice = Address::generate(&env);
+    client.add_member(&owner, &alice, &FamilyRole::Member, &500_000);
+
+    let record = client.get_member(&alice).expect("member should exist");
+    assert_eq!(record.role, FamilyRole::Member);
+    assert_eq!(record.spending_limit, 500_000);
+    assert_eq!(record.address, alice);
+}
+
+#[test]
+fn test_get_member_returns_none_for_unknown() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let stranger = Address::generate(&env);
+    assert!(client.get_member(&stranger).is_none());
+}
+
+#[test]
+fn test_update_spending_limit() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let bob = Address::generate(&env);
+    client.add_member(&owner, &bob, &FamilyRole::Member, &100);
+
+    client.update_spending_limit(&owner, &bob, &999);
+
+    let record = client.get_member(&bob).unwrap();
+    assert_eq!(record.spending_limit, 999);
+}
+
+#[test]
+fn test_check_spending_limit_within() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let carol = Address::generate(&env);
+    client.add_member(&owner, &carol, &FamilyRole::Member, &1_000);
+
+    assert!(client.check_spending_limit(&carol, &1_000)); // exactly at limit
+    assert!(client.check_spending_limit(&carol, &999)); // under limit
+    assert!(!client.check_spending_limit(&carol, &1_001)); // over limit
+}
+
+#[test]
+fn test_check_spending_limit_zero_means_unlimited() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let dave = Address::generate(&env);
+    client.add_member(&owner, &dave, &FamilyRole::Member, &0); // 0 = unlimited
+
+    assert!(client.check_spending_limit(&dave, &i128::MAX));
+}
+
+#[test]
+fn test_check_spending_limit_unknown_member_returns_false() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let stranger = Address::generate(&env);
+    assert!(!client.check_spending_limit(&stranger, &100));
+}
+
+#[test]
+fn test_check_spending_limit_negative_amount_returns_false() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    let admin = Address::generate(&env);
+    let member = Address::generate(&env);
+    let non_member = Address::generate(&env);
+    let initial_members = vec![&env, member.clone()];
+
+    // Initialize wallet
+    client.init(&owner, &initial_members);
+
+    // Add admin
+    client.add_family_member(&owner, &admin, &FamilyRole::Admin);
+
+    // Configure spending limit to 1000 tokens
+    let signers = vec![&env, owner.clone(), admin.clone()];
+    client.configure_multisig(
+        &owner,
+        &TransactionType::LargeWithdrawal,
+        &2,
+        &signers,
+        &1000_0000000, // 1000 tokens with 7 decimals
+    );
+
+    // Test 1: Owner can spend any amount
+    assert!(client.check_spending_limit(&owner, &5000_0000000)); // 5000 tokens
+    assert!(client.check_spending_limit(&owner, &100000_0000000)); // 100000 tokens
+
+    // Test 2: Admin can spend any amount
+    assert!(client.check_spending_limit(&admin, &5000_0000000));
+    assert!(client.check_spending_limit(&admin, &100000_0000000));
+
+    // Test 3: Member can spend within limit
+    assert!(client.check_spending_limit(&member, &500_0000000)); // 500 tokens - within limit
+    assert!(client.check_spending_limit(&member, &1000_0000000)); // 1000 tokens - at limit
+
+    // Test 4: Member cannot spend above limit
+    assert!(!client.check_spending_limit(&member, &1001_0000000)); // 1001 tokens - exceeds limit
+    assert!(!client.check_spending_limit(&member, &5000_0000000)); // 5000 tokens - exceeds limit
+
+    // Test 5: Non-member cannot spend
+    assert!(!client.check_spending_limit(&non_member, &1_0000000)); // Even 1 token
+    assert!(!client.check_spending_limit(&non_member, &1000_0000000));
+    client.init(&owner, &vec![&env]);
+
+    let eve = Address::generate(&env);
+    client.add_member(&owner, &eve, &FamilyRole::Member, &1_000);
+
+    assert!(!client.check_spending_limit(&eve, &-1));
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #10)")]
+fn test_add_member_invalid_role_owner() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let alice = Address::generate(&env);
+    // Owner role not allowed via add_member — Error::InvalidRole = 10
+    client.add_member(&owner, &alice, &FamilyRole::Owner, &100);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #13)")]
+fn test_add_member_negative_spending_limit() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let alice = Address::generate(&env);
+    // Negative limit — Error::InvalidSpendingLimit = 13
+    client.add_member(&owner, &alice, &FamilyRole::Member, &-50);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #10)")]
+fn test_add_member_duplicate() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let alice = Address::generate(&env);
+    client.add_member(&owner, &alice, &FamilyRole::Member, &100);
+    // Duplicate — Error::InvalidRole = 10 (member already exists)
+    client.add_member(&owner, &alice, &FamilyRole::Member, &200);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #1)")]
+fn test_update_spending_limit_unauthorized() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    let member1 = Address::generate(&env);
+    client.init(&owner, &vec![&env, member1.clone()]);
+
+    let alice = Address::generate(&env);
+    client.add_member(&owner, &alice, &FamilyRole::Member, &100);
+
+    // member1 is not owner/admin — Error::Unauthorized = 1
+    client.update_spending_limit(&member1, &alice, &999);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #13)")]
+fn test_update_spending_limit_negative() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let alice = Address::generate(&env);
+    client.add_member(&owner, &alice, &FamilyRole::Member, &100);
+
+    // Negative limit — Error::InvalidSpendingLimit = 13
+    client.update_spending_limit(&owner, &alice, &-1);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #11)")]
+fn test_update_spending_limit_member_not_found() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, FamilyWallet);
+    let client = FamilyWalletClient::new(&env, &contract_id);
+
+    let owner = Address::generate(&env);
+    client.init(&owner, &vec![&env]);
+
+    let stranger = Address::generate(&env);
+    // Not a member — Error::MemberNotFound = 11
+    client.update_spending_limit(&owner, &stranger, &100);
+}

@@ -11,49 +11,27 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "create_goal",
+              "function_name": "create_policy",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Education"
+                  "string": "Policy 1"
+                },
+                {
+                  "string": "health"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 100
                   }
                 },
                 {
-                  "u64": 5000
-                }
-              ]
-            }
-          },
-          "sub_invocations": []
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "add_to_goal",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "u32": 1
-                },
-                {
                   "i128": {
                     "hi": 0,
-                    "lo": 5000
+                    "lo": 1000
                   }
                 }
               ]
@@ -70,13 +48,28 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "unlock_goal",
+              "function_name": "create_policy",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "u32": 1
+                  "string": "Policy 2"
+                },
+                {
+                  "string": "life"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 200
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 2000
+                  }
                 }
               ]
             }
@@ -92,16 +85,28 @@
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-              "function_name": "set_time_lock",
+              "function_name": "create_policy",
               "args": [
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "u32": 1
+                  "string": "Policy 3"
                 },
                 {
-                  "u64": 10000
+                  "string": "emergency"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 300
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 3000
+                  }
                 }
               ]
             }
@@ -114,13 +119,13 @@
   ],
   "ledger": {
     "protocol_version": 21,
-    "sequence_number": 1,
-    "timestamp": 1000,
+    "sequence_number": 0,
+    "timestamp": 0,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
-    "base_reserve": 10,
-    "min_persistent_entry_ttl": 1,
-    "min_temp_entry_ttl": 1,
-    "max_entry_ttl": 100000,
+    "base_reserve": 0,
+    "min_persistent_entry_ttl": 4096,
+    "min_temp_entry_ttl": 16,
+    "max_entry_ttl": 6312000,
     "ledger_entries": [
       [
         {
@@ -147,124 +152,15 @@
                     "storage": [
                       {
                         "key": {
-                          "symbol": "AUDIT"
+                          "symbol": "NEXT_ID"
                         },
                         "val": {
-                          "vec": [
-                            {
-                              "map": [
-                                {
-                                  "key": {
-                                    "symbol": "caller"
-                                  },
-                                  "val": {
-                                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "operation"
-                                  },
-                                  "val": {
-                                    "symbol": "add"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "success"
-                                  },
-                                  "val": {
-                                    "bool": true
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "timestamp"
-                                  },
-                                  "val": {
-                                    "u64": 1000
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "map": [
-                                {
-                                  "key": {
-                                    "symbol": "caller"
-                                  },
-                                  "val": {
-                                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "operation"
-                                  },
-                                  "val": {
-                                    "symbol": "unlock"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "success"
-                                  },
-                                  "val": {
-                                    "bool": true
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "timestamp"
-                                  },
-                                  "val": {
-                                    "u64": 1000
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "map": [
-                                {
-                                  "key": {
-                                    "symbol": "caller"
-                                  },
-                                  "val": {
-                                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "operation"
-                                  },
-                                  "val": {
-                                    "symbol": "timelock"
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "success"
-                                  },
-                                  "val": {
-                                    "bool": true
-                                  }
-                                },
-                                {
-                                  "key": {
-                                    "symbol": "timestamp"
-                                  },
-                                  "val": {
-                                    "u64": 1000
-                                  }
-                                }
-                              ]
-                            }
-                          ]
+                          "u32": 3
                         }
                       },
                       {
                         "key": {
-                          "symbol": "GOALS"
+                          "symbol": "POLICIES"
                         },
                         "val": {
                           "map": [
@@ -276,13 +172,29 @@
                                 "map": [
                                   {
                                     "key": {
-                                      "symbol": "current_amount"
+                                      "symbol": "active"
+                                    },
+                                    "val": {
+                                      "bool": true
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "coverage_amount"
                                     },
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 5000
+                                        "lo": 1000
                                       }
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "coverage_type"
+                                    },
+                                    "val": {
+                                      "string": "health"
                                     }
                                   },
                                   {
@@ -295,10 +207,13 @@
                                   },
                                   {
                                     "key": {
-                                      "symbol": "locked"
+                                      "symbol": "monthly_premium"
                                     },
                                     "val": {
-                                      "bool": false
+                                      "i128": {
+                                        "hi": 0,
+                                        "lo": 100
+                                      }
                                     }
                                   },
                                   {
@@ -306,7 +221,15 @@
                                       "symbol": "name"
                                     },
                                     "val": {
-                                      "string": "Education"
+                                      "string": "Policy 1"
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "next_payment_date"
+                                    },
+                                    "val": {
+                                      "u64": 2592000
                                     }
                                   },
                                   {
@@ -319,43 +242,184 @@
                                   },
                                   {
                                     "key": {
-                                      "symbol": "target_amount"
+                                      "symbol": "schedule_id"
+                                    },
+                                    "val": "void"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
+                                "u32": 2
+                              },
+                              "val": {
+                                "map": [
+                                  {
+                                    "key": {
+                                      "symbol": "active"
+                                    },
+                                    "val": {
+                                      "bool": true
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "coverage_amount"
                                     },
                                     "val": {
                                       "i128": {
                                         "hi": 0,
-                                        "lo": 10000
+                                        "lo": 2000
                                       }
                                     }
                                   },
                                   {
                                     "key": {
-                                      "symbol": "target_date"
+                                      "symbol": "coverage_type"
                                     },
                                     "val": {
-                                      "u64": 5000
+                                      "string": "life"
                                     }
                                   },
                                   {
                                     "key": {
-                                      "symbol": "unlock_date"
+                                      "symbol": "id"
                                     },
                                     "val": {
-                                      "u64": 10000
+                                      "u32": 2
                                     }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "monthly_premium"
+                                    },
+                                    "val": {
+                                      "i128": {
+                                        "hi": 0,
+                                        "lo": 200
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "name"
+                                    },
+                                    "val": {
+                                      "string": "Policy 2"
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "next_payment_date"
+                                    },
+                                    "val": {
+                                      "u64": 2592000
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "owner"
+                                    },
+                                    "val": {
+                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "schedule_id"
+                                    },
+                                    "val": "void"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "key": {
+                                "u32": 3
+                              },
+                              "val": {
+                                "map": [
+                                  {
+                                    "key": {
+                                      "symbol": "active"
+                                    },
+                                    "val": {
+                                      "bool": true
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "coverage_amount"
+                                    },
+                                    "val": {
+                                      "i128": {
+                                        "hi": 0,
+                                        "lo": 3000
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "coverage_type"
+                                    },
+                                    "val": {
+                                      "string": "emergency"
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "id"
+                                    },
+                                    "val": {
+                                      "u32": 3
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "monthly_premium"
+                                    },
+                                    "val": {
+                                      "i128": {
+                                        "hi": 0,
+                                        "lo": 300
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "name"
+                                    },
+                                    "val": {
+                                      "string": "Policy 3"
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "next_payment_date"
+                                    },
+                                    "val": {
+                                      "u64": 2592000
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "owner"
+                                    },
+                                    "val": {
+                                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                                    }
+                                  },
+                                  {
+                                    "key": {
+                                      "symbol": "schedule_id"
+                                    },
+                                    "val": "void"
                                   }
                                 ]
                               }
                             }
                           ]
-                        }
-                      },
-                      {
-                        "key": {
-                          "symbol": "NEXT_ID"
-                        },
-                        "val": {
-                          "u32": 1
                         }
                       }
                     ]
@@ -365,7 +429,7 @@
             },
             "ext": "v0"
           },
-          100000
+          518400
         ]
       ],
       [
@@ -398,7 +462,7 @@
             },
             "ext": "v0"
           },
-          100000
+          6311999
         ]
       ],
       [
@@ -431,40 +495,7 @@
             },
             "ext": "v0"
           },
-          100000
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "ledger_key_nonce": {
-                "nonce": 4837995959683129791
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 4837995959683129791
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          100000
+          6311999
         ]
       ],
       [
@@ -497,7 +528,7 @@
             },
             "ext": "v0"
           },
-          100000
+          6311999
         ]
       ],
       [
@@ -518,7 +549,7 @@
             },
             "ext": "v0"
           },
-          100000
+          518400
         ]
       ]
     ]
@@ -539,7 +570,7 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "create_goal"
+                "symbol": "create_policy"
               }
             ],
             "data": {
@@ -548,16 +579,22 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "string": "Education"
+                  "string": "Policy 1"
+                },
+                {
+                  "string": "health"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 10000
+                    "lo": 100
                   }
                 },
                 {
-                  "u64": 5000
+                  "i128": {
+                    "hi": 0,
+                    "lo": 1000
+                  }
                 }
               ]
             }
@@ -582,10 +619,32 @@
               "map": [
                 {
                   "key": {
-                    "symbol": "goal_id"
+                    "symbol": "coverage_amount"
                   },
                   "val": {
-                    "u32": 1
+                    "i128": {
+                      "hi": 0,
+                      "lo": 1000
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "coverage_type"
+                  },
+                  "val": {
+                    "string": "health"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "monthly_premium"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 100
+                    }
                   }
                 },
                 {
@@ -593,26 +652,15 @@
                     "symbol": "name"
                   },
                   "val": {
-                    "string": "Education"
+                    "string": "Policy 1"
                   }
                 },
                 {
                   "key": {
-                    "symbol": "target_amount"
+                    "symbol": "policy_id"
                   },
                   "val": {
-                    "i128": {
-                      "hi": 0,
-                      "lo": 10000
-                    }
-                  }
-                },
-                {
-                  "key": {
-                    "symbol": "target_date"
-                  },
-                  "val": {
-                    "u64": 5000
+                    "u32": 1
                   }
                 },
                 {
@@ -620,7 +668,7 @@
                     "symbol": "timestamp"
                   },
                   "val": {
-                    "u64": 1000
+                    "u64": 0
                   }
                 }
               ]
@@ -639,12 +687,12 @@
           "v0": {
             "topics": [
               {
-                "symbol": "savings"
+                "symbol": "insure"
               },
               {
                 "vec": [
                   {
-                    "symbol": "GoalCreated"
+                    "symbol": "PolicyCreated"
                   }
                 ]
               }
@@ -676,7 +724,7 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "create_goal"
+                "symbol": "create_policy"
               }
             ],
             "data": {
@@ -702,7 +750,7 @@
                 "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
               },
               {
-                "symbol": "add_to_goal"
+                "symbol": "create_policy"
               }
             ],
             "data": {
@@ -711,12 +759,21 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
                 },
                 {
-                  "u32": 1
+                  "string": "Policy 2"
+                },
+                {
+                  "string": "life"
                 },
                 {
                   "i128": {
                     "hi": 0,
-                    "lo": 5000
+                    "lo": 200
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 2000
                   }
                 }
               ]
@@ -735,39 +792,55 @@
           "v0": {
             "topics": [
               {
-                "symbol": "added"
+                "symbol": "created"
               }
             ],
             "data": {
               "map": [
                 {
                   "key": {
-                    "symbol": "amount"
+                    "symbol": "coverage_amount"
                   },
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 5000
+                      "lo": 2000
                     }
                   }
                 },
                 {
                   "key": {
-                    "symbol": "goal_id"
+                    "symbol": "coverage_type"
                   },
                   "val": {
-                    "u32": 1
+                    "string": "life"
                   }
                 },
                 {
                   "key": {
-                    "symbol": "new_total"
+                    "symbol": "monthly_premium"
                   },
                   "val": {
                     "i128": {
                       "hi": 0,
-                      "lo": 5000
+                      "lo": 200
                     }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "name"
+                  },
+                  "val": {
+                    "string": "Policy 2"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "policy_id"
+                  },
+                  "val": {
+                    "u32": 2
                   }
                 },
                 {
@@ -775,7 +848,7 @@
                     "symbol": "timestamp"
                   },
                   "val": {
-                    "u64": 1000
+                    "u64": 0
                   }
                 }
               ]
@@ -794,12 +867,12 @@
           "v0": {
             "topics": [
               {
-                "symbol": "savings"
+                "symbol": "insure"
               },
               {
                 "vec": [
                   {
-                    "symbol": "FundsAdded"
+                    "symbol": "PolicyCreated"
                   }
                 ]
               }
@@ -807,16 +880,10 @@
             "data": {
               "vec": [
                 {
-                  "u32": 1
+                  "u32": 2
                 },
                 {
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 5000
-                  }
                 }
               ]
             }
@@ -837,300 +904,243 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "add_to_goal"
+                "symbol": "create_policy"
+              }
+            ],
+            "data": {
+              "u32": 2
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
+                "symbol": "create_policy"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                },
+                {
+                  "string": "Policy 3"
+                },
+                {
+                  "string": "emergency"
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 300
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 3000
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "created"
+              }
+            ],
+            "data": {
+              "map": [
+                {
+                  "key": {
+                    "symbol": "coverage_amount"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 3000
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "coverage_type"
+                  },
+                  "val": {
+                    "string": "emergency"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "monthly_premium"
+                  },
+                  "val": {
+                    "i128": {
+                      "hi": 0,
+                      "lo": 300
+                    }
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "name"
+                  },
+                  "val": {
+                    "string": "Policy 3"
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "policy_id"
+                  },
+                  "val": {
+                    "u32": 3
+                  }
+                },
+                {
+                  "key": {
+                    "symbol": "timestamp"
+                  },
+                  "val": {
+                    "u64": 0
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "insure"
+              },
+              {
+                "vec": [
+                  {
+                    "symbol": "PolicyCreated"
+                  }
+                ]
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "u32": 3
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "create_policy"
+              }
+            ],
+            "data": {
+              "u32": 3
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": null,
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_call"
+              },
+              {
+                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
+              },
+              {
+                "symbol": "get_total_monthly_premium"
+              }
+            ],
+            "data": {
+              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
+        "type_": "diagnostic",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "fn_return"
+              },
+              {
+                "symbol": "get_total_monthly_premium"
               }
             ],
             "data": {
               "i128": {
                 "hi": 0,
-                "lo": 5000
+                "lo": 600
               }
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
-              },
-              {
-                "symbol": "unlock_goal"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "u32": 1
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "contract",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "savings"
-              },
-              {
-                "vec": [
-                  {
-                    "symbol": "GoalUnlocked"
-                  }
-                ]
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "u32": 1
-                },
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "unlock_goal"
-              }
-            ],
-            "data": {
-              "bool": true
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
-              },
-              {
-                "symbol": "set_time_lock"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "u32": 1
-                },
-                {
-                  "u64": 10000
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "set_time_lock"
-              }
-            ],
-            "data": {
-              "bool": true
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_call"
-              },
-              {
-                "bytes": "0000000000000000000000000000000000000000000000000000000000000001"
-              },
-              {
-                "symbol": "withdraw_from_goal"
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "u32": 1
-                },
-                {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 1000
-                  }
-                }
-              ]
-            }
-          }
-        }
-      },
-      "failed_call": false
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "fn_return"
-              },
-              {
-                "symbol": "withdraw_from_goal"
-              }
-            ],
-            "data": {
-              "error": {
-                "contract": 12
-              }
-            }
-          }
-        }
-      },
-      "failed_call": true
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": "0000000000000000000000000000000000000000000000000000000000000001",
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "error"
-              },
-              {
-                "error": {
-                  "contract": 12
-                }
-              }
-            ],
-            "data": {
-              "string": "escalating Ok(ScErrorType::Contract) frame-exit to Err"
-            }
-          }
-        }
-      },
-      "failed_call": true
-    },
-    {
-      "event": {
-        "ext": "v0",
-        "contract_id": null,
-        "type_": "diagnostic",
-        "body": {
-          "v0": {
-            "topics": [
-              {
-                "symbol": "error"
-              },
-              {
-                "error": {
-                  "contract": 12
-                }
-              }
-            ],
-            "data": {
-              "vec": [
-                {
-                  "string": "contract try_call failed"
-                },
-                {
-                  "symbol": "withdraw_from_goal"
-                },
-                {
-                  "vec": [
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                    },
-                    {
-                      "u32": 1
-                    },
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 1000
-                      }
-                    }
-                  ]
-                }
-              ]
             }
           }
         }

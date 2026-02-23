@@ -469,13 +469,7 @@ impl RemittanceSplit {
         total_amount: i128,
     ) -> Result<Vec<i128>, RemittanceSplitError> {
         let amounts = Self::calculate_split_amounts(&env, total_amount, true)?;
-        Ok(vec![
-            &env,
-            amounts[0],
-            amounts[1],
-            amounts[2],
-            amounts[3],
-        ])
+        Ok(vec![&env, amounts[0], amounts[1], amounts[2], amounts[3]])
     }
 
     /// Distribute USDC according to the configured split
