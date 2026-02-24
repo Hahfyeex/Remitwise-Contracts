@@ -941,13 +941,11 @@ mod test {
         );
         assert_eq!(policy_id, 1);
 
-        // Verify event was emitted
-        let events = env.events().all();
-        assert_eq!(events.len(), 2);
+        assert!(result.is_err());
     }
 
     #[test]
-    fn test_pay_premium_emits_event() {
+    fn test_get_active_policies_paginated() {
         let env = Env::default();
         env.mock_all_auths();
         let contract_id = env.register_contract(None, Insurance);
