@@ -1810,4 +1810,77 @@ mod test {
         assert_eq!(next_bill.due_date, expected);
         assert_eq!(next_bill.due_date, 2_209_600);
     }
+
+    /// Issue #102 – When pay_bill is called on a recurring bill, the contract
+    /// creates the next occurrence.  This test asserts every cloned field
+    /// individually so that a regression in the clone logic (e.g. paid left
+    /// true, wrong due_date, wrong owner) is caught immediately.
+    #[test]
+    fn test_recurring_bill_clone_fields() {
+        let env = make_env();
+        env.mock_all_auths();
+        let cid = env.register_contract(None, BillPayments);
+        let client = BillPaymentsClient::new(&env, &cid);
+        let owner = Address::generate(&env);
+
+        let original_due_date: u64 = 1_000_000;
+        let frequency: u32 = 30;
+        let amount: i128 = 10_000;
+        let bill_name = String::from_str(&env, "Rent");
+
+        let bill_id = client.create_bill(
+            &owner,
+            &bill_name,
+            &amount,
+            &original_due_date,
+            &true,       // recurring
+            &frequency,  // frequency_days
+        );
+
+        // Pay the recurring bill – this should create the next occurrence.
+        client.pay_bill(&owner, &bill_id);
+
+        // The next bill should have ID = bill_id + 1.
+        let next_id = bill_id + 1;
+        let next_bill = client
+            .get_bill(&next_id)
+            .expect("Next recurring bill should exist after paying the original");
+
+        // --- Assert every cloned field ---
+        assert_eq!(
+            next_bill.name, bill_name,
+            "Cloned bill must preserve the original name"
+        );
+        assert_eq!(
+            next_bill.amount, amount,
+            "Cloned bill must preserve the original amount"
+        );
+        assert_eq!(
+            next_bill.recurring, true,
+            "Cloned bill must remain recurring"
+        );
+        assert_eq!(
+            next_bill.frequency_days, frequency,
+            "Cloned bill must preserve frequency_days"
+        );
+        assert_eq!(
+            next_bill.owner, owner,
+            "Cloned bill must preserve the original owner"
+        );
+        assert_eq!(
+            next_bill.paid, false,
+            "Cloned bill must start as unpaid"
+        );
+        assert_eq!(
+            next_bill.paid_at,
+            None,
+            "Cloned bill must have paid_at = None"
+        );
+
+        let expected_due_date = original_due_date + (frequency as u64 * 86400);
+        assert_eq!(
+            next_bill.due_date, expected_due_date,
+            "Cloned bill due_date must be original_due_date + frequency_days * 86400"
+        );
+    }
 }
