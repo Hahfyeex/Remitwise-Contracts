@@ -959,23 +959,183 @@ mod test {
         assert_eq!(events.len(), 5);
     }
 
+    // ──────────────────────────────────────────────────────────────────
+    // Boundary tests for split percentages (#103)
+    // ──────────────────────────────────────────────────────────────────
+
+    /// 100 % spending, all other categories zero.
     #[test]
-    fn test_uninitialized_defaults() {
+    fn test_split_boundary_100_0_0_0() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, RemittanceSplit);
         let client = RemittanceSplitClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
 
-        // 1. Verify get_split returns the hardcoded default: [50, 30, 15, 5]
-        let default_split = client.get_split();
-        assert_eq!(default_split.len(), 4);
-        assert_eq!(default_split.get(0).unwrap(), 50);
-        assert_eq!(default_split.get(1).unwrap(), 30);
-        assert_eq!(default_split.get(2).unwrap(), 15);
-        assert_eq!(default_split.get(3).unwrap(), 5);
+        let ok = client.initialize_split(&owner, &0, &100, &0, &0, &0);
+        assert!(ok);
 
-        // 2. Verify get_config returns None (Option::None)
-        let config = client.get_config();
-        assert!(config.is_none());
+        // get_split must return the exact percentages
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 100);
+        assert_eq!(split.get(1).unwrap(), 0);
+        assert_eq!(split.get(2).unwrap(), 0);
+        assert_eq!(split.get(3).unwrap(), 0);
+
+        // calculate_split must allocate the entire amount to spending
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 1000);
+        assert_eq!(amounts.get(1).unwrap(), 0);
+        assert_eq!(amounts.get(2).unwrap(), 0);
+        assert_eq!(amounts.get(3).unwrap(), 0);
+    }
+
+    /// 100 % savings, all other categories zero.
+    #[test]
+    fn test_split_boundary_0_100_0_0() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, RemittanceSplit);
+        let client = RemittanceSplitClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
+
+        let ok = client.initialize_split(&owner, &0, &0, &100, &0, &0);
+        assert!(ok);
+
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 0);
+        assert_eq!(split.get(1).unwrap(), 100);
+        assert_eq!(split.get(2).unwrap(), 0);
+        assert_eq!(split.get(3).unwrap(), 0);
+
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 0);
+        assert_eq!(amounts.get(1).unwrap(), 1000);
+        assert_eq!(amounts.get(2).unwrap(), 0);
+        assert_eq!(amounts.get(3).unwrap(), 0);
+    }
+
+    /// 100 % bills, all other categories zero.
+    #[test]
+    fn test_split_boundary_0_0_100_0() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, RemittanceSplit);
+        let client = RemittanceSplitClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
+
+        let ok = client.initialize_split(&owner, &0, &0, &0, &100, &0);
+        assert!(ok);
+
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 0);
+        assert_eq!(split.get(1).unwrap(), 0);
+        assert_eq!(split.get(2).unwrap(), 100);
+        assert_eq!(split.get(3).unwrap(), 0);
+
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 0);
+        assert_eq!(amounts.get(1).unwrap(), 0);
+        assert_eq!(amounts.get(2).unwrap(), 1000);
+        assert_eq!(amounts.get(3).unwrap(), 0);
+    }
+
+    /// 100 % insurance, all other categories zero.
+    #[test]
+    fn test_split_boundary_0_0_0_100() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, RemittanceSplit);
+        let client = RemittanceSplitClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
+
+        let ok = client.initialize_split(&owner, &0, &0, &0, &0, &100);
+        assert!(ok);
+
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 0);
+        assert_eq!(split.get(1).unwrap(), 0);
+        assert_eq!(split.get(2).unwrap(), 0);
+        assert_eq!(split.get(3).unwrap(), 100);
+
+        // Insurance gets the remainder: 1000 - 0 - 0 - 0 = 1000
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 0);
+        assert_eq!(amounts.get(1).unwrap(), 0);
+        assert_eq!(amounts.get(2).unwrap(), 0);
+        assert_eq!(amounts.get(3).unwrap(), 1000);
+    }
+
+    /// Equal split: 25 / 25 / 25 / 25.
+    #[test]
+    fn test_split_boundary_25_25_25_25() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, RemittanceSplit);
+        let client = RemittanceSplitClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
+
+        let ok = client.initialize_split(&owner, &0, &25, &25, &25, &25);
+        assert!(ok);
+
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 25);
+        assert_eq!(split.get(1).unwrap(), 25);
+        assert_eq!(split.get(2).unwrap(), 25);
+        assert_eq!(split.get(3).unwrap(), 25);
+
+        // 25 % of 1000 = 250 for each category
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 250);
+        assert_eq!(amounts.get(1).unwrap(), 250);
+        assert_eq!(amounts.get(2).unwrap(), 250);
+        assert_eq!(amounts.get(3).unwrap(), 250);
+    }
+
+    /// update_split with boundary percentages: change from a normal split
+    /// to 100/0/0/0, then to 25/25/25/25.
+    #[test]
+    fn test_update_split_boundary_percentages() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, RemittanceSplit);
+        let client = RemittanceSplitClient::new(&env, &contract_id);
+        let owner = Address::generate(&env);
+
+        // Start with a typical split
+        client.initialize_split(&owner, &0, &50, &30, &15, &5);
+
+        // Update to 100/0/0/0
+        let ok = client.update_split(&owner, &1, &100, &0, &0, &0);
+        assert!(ok);
+
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 100);
+        assert_eq!(split.get(1).unwrap(), 0);
+        assert_eq!(split.get(2).unwrap(), 0);
+        assert_eq!(split.get(3).unwrap(), 0);
+
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 1000);
+        assert_eq!(amounts.get(1).unwrap(), 0);
+        assert_eq!(amounts.get(2).unwrap(), 0);
+        assert_eq!(amounts.get(3).unwrap(), 0);
+
+        // Update again to 25/25/25/25
+        let ok = client.update_split(&owner, &1, &25, &25, &25, &25);
+        assert!(ok);
+
+        let split = client.get_split();
+        assert_eq!(split.get(0).unwrap(), 25);
+        assert_eq!(split.get(1).unwrap(), 25);
+        assert_eq!(split.get(2).unwrap(), 25);
+        assert_eq!(split.get(3).unwrap(), 25);
+
+        let amounts = client.calculate_split(&1000);
+        assert_eq!(amounts.get(0).unwrap(), 250);
+        assert_eq!(amounts.get(1).unwrap(), 250);
+        assert_eq!(amounts.get(2).unwrap(), 250);
+        assert_eq!(amounts.get(3).unwrap(), 250);
     }
 }
 mod test;
