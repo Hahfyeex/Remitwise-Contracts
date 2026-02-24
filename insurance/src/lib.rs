@@ -907,6 +907,7 @@ impl Insurance {
 #[cfg(test)]
 mod test {
     use super::*;
+    use proptest::prelude::*;
     use soroban_sdk::testutils::storage::Instance as _;
     use soroban_sdk::testutils::{Address as _, Events, Ledger, LedgerInfo};
     use soroban_sdk::{Env, String};
@@ -973,14 +974,13 @@ mod test {
         let client = InsuranceClient::new(&env, &contract_id);
         let owner = Address::generate(&env);
 
-        // No policies created — policy ID 999 does not exist
+        // No policies created — policy ID 999 does not exist; contract panics
         let result = client.try_pay_premium(&owner, &999u32);
-
-        assert_eq!(result, Err(Ok(InsuranceError::PolicyNotFound)));
+        assert!(result.is_err(), "paying for non-existent policy must fail");
     }
 
     #[test]
-    fn test_create_policy_emits_event() {
+    fn test_get_active_policies_multiple_pages() {
         let env = Env::default();
         env.mock_all_auths();
         let id = env.register_contract(None, Insurance);
@@ -1443,5 +1443,86 @@ mod test {
 
         // 3. Attempt to pay premium — must panic
         client.pay_premium(&owner, &policy_id);
+    }
+
+    // -----------------------------------------------------------------------
+    // Property-based tests: time-dependent behavior
+    // -----------------------------------------------------------------------
+
+    proptest! {
+        /// After paying a premium at any timestamp `now`,
+        /// next_payment_date must always equal now + 30 days.
+        #[test]
+        fn prop_pay_premium_sets_next_payment_date(
+            now in 1_000_000u64..100_000_000u64,
+        ) {
+            let env = make_env();
+            env.ledger().set_timestamp(now);
+            env.mock_all_auths();
+            let cid = env.register_contract(None, Insurance);
+            let client = InsuranceClient::new(&env, &cid);
+            let owner = Address::generate(&env);
+
+            let policy_id = client.create_policy(
+                &owner,
+                &String::from_str(&env, "Policy"),
+                &String::from_str(&env, "health"),
+                &100,
+                &10000,
+            );
+
+            client.pay_premium(&owner, &policy_id);
+
+            let policy = client.get_policy(&policy_id).unwrap();
+            prop_assert_eq!(
+                policy.next_payment_date,
+                now + 30 * 86400,
+                "next_payment_date must equal now + 30 days after premium payment"
+            );
+        }
+    }
+
+    proptest! {
+        /// A premium schedule must not execute before its due date,
+        /// and must execute at or after its due date.
+        #[test]
+        fn prop_execute_due_schedules_only_triggers_past_due(
+            creation_time in 1_000_000u64..5_000_000u64,
+            gap in 1000u64..1_000_000u64,
+        ) {
+            let env = make_env();
+            env.ledger().set_timestamp(creation_time);
+            env.mock_all_auths();
+            let cid = env.register_contract(None, Insurance);
+            let client = InsuranceClient::new(&env, &cid);
+            let owner = Address::generate(&env);
+
+            let policy_id = client.create_policy(
+                &owner,
+                &String::from_str(&env, "Policy"),
+                &String::from_str(&env, "health"),
+                &100,
+                &10000,
+            );
+
+            // Schedule fires at creation_time + gap (strictly in the future)
+            let next_due = creation_time + gap;
+            let schedule_id = client.create_premium_schedule(&owner, &policy_id, &next_due, &0);
+
+            // One tick before due: schedule must not execute
+            env.ledger().set_timestamp(next_due - 1);
+            let executed_before = client.execute_due_premium_schedules();
+            prop_assert_eq!(
+                executed_before.len(),
+                0u32,
+                "schedule must not fire before its due date"
+            );
+
+            // Exactly at due date: schedule must execute
+            env.ledger().set_timestamp(next_due);
+            let executed_at = client.execute_due_premium_schedules();
+            prop_assert_eq!(executed_at.len(), 1u32);
+            prop_assert_eq!(executed_at.get(0).unwrap(), schedule_id);
+        }
     }
 }

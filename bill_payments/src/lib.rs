@@ -1120,6 +1120,7 @@ impl BillPayments {
 #[cfg(test)]
 mod test {
     use super::*;
+    use proptest::prelude::*;
     use soroban_sdk::{
         testutils::{Address as _, Ledger},
         Env, String,
@@ -1809,5 +1810,131 @@ mod test {
         let expected = 1_000_000u64 + (14u64 * 86400);
         assert_eq!(next_bill.due_date, expected);
         assert_eq!(next_bill.due_date, 2_209_600);
+    }
+
+    // -----------------------------------------------------------------------
+    // Property-based tests: time-dependent behavior
+    // -----------------------------------------------------------------------
+
+    proptest! {
+        /// All bills returned by get_overdue_bills must have due_date < now,
+        /// and every bill created with due_date < now must appear in the result.
+        #[test]
+        fn prop_overdue_bills_all_have_due_before_now(
+            now in 2_000_000u64..10_000_000u64,
+            n_overdue in 1usize..6usize,
+            n_future in 0usize..6usize,
+        ) {
+            let env = make_env();
+            env.ledger().set_timestamp(now);
+            env.mock_all_auths();
+            let cid = env.register_contract(None, BillPayments);
+            let client = BillPaymentsClient::new(&env, &cid);
+            let owner = Address::generate(&env);
+
+            // Create bills with due_date < now (overdue)
+            for i in 0..n_overdue {
+                client.create_bill(
+                    &owner,
+                    &String::from_str(&env, "Overdue"),
+                    &100,
+                    &(now - 1 - i as u64),
+                    &false,
+                    &0,
+                );
+            }
+
+            // Create bills with due_date >= now (not overdue)
+            for i in 0..n_future {
+                client.create_bill(
+                    &owner,
+                    &String::from_str(&env, "Future"),
+                    &100,
+                    &(now + 1 + i as u64),
+                    &false,
+                    &0,
+                );
+            }
+
+            let page = client.get_overdue_bills(&0, &50);
+            for bill in page.items.iter() {
+                prop_assert!(bill.due_date < now, "returned bill must be past due");
+            }
+            prop_assert_eq!(page.count as usize, n_overdue);
+        }
+    }
+
+    proptest! {
+        /// Bills with due_date >= now must never appear in get_overdue_bills.
+        #[test]
+        fn prop_future_bills_not_in_overdue_set(
+            now in 1_000_000u64..5_000_000u64,
+            n in 1usize..6usize,
+        ) {
+            let env = make_env();
+            env.ledger().set_timestamp(now);
+            env.mock_all_auths();
+            let cid = env.register_contract(None, BillPayments);
+            let client = BillPaymentsClient::new(&env, &cid);
+            let owner = Address::generate(&env);
+
+            for i in 0..n {
+                client.create_bill(
+                    &owner,
+                    &String::from_str(&env, "NotOverdue"),
+                    &100,
+                    &(now + i as u64), // due_date >= now — strict less-than is required to be overdue
+                    &false,
+                    &0,
+                );
+            }
+
+            let page = client.get_overdue_bills(&0, &50);
+            prop_assert_eq!(
+                page.count,
+                0u32,
+                "bills with due_date >= now must not appear as overdue"
+            );
+        }
+    }
+
+    proptest! {
+        /// After paying a recurring bill, the next bill's due_date equals
+        /// the original due_date + frequency_days * 86400, regardless of
+        /// when payment is made.
+        #[test]
+        fn prop_recurring_next_bill_due_date_follows_original(
+            base_due in 1_000_000u64..5_000_000u64,
+            pay_offset in 1u64..100_000u64,
+            freq_days in 1u32..366u32,
+        ) {
+            let env = make_env();
+            let pay_time = base_due + pay_offset;
+            env.ledger().set_timestamp(pay_time);
+            env.mock_all_auths();
+            let cid = env.register_contract(None, BillPayments);
+            let client = BillPaymentsClient::new(&env, &cid);
+            let owner = Address::generate(&env);
+
+            let bill_id = client.create_bill(
+                &owner,
+                &String::from_str(&env, "Recurring"),
+                &200,
+                &base_due,
+                &true,
+                &freq_days,
+            );
+
+            client.pay_bill(&owner, &bill_id);
+
+            let next_bill = client.get_bill(&2).unwrap();
+            let expected_due = base_due + (freq_days as u64 * 86400);
+            prop_assert_eq!(
+                next_bill.due_date,
+                expected_due,
+                "next recurring bill due_date must equal original due_date + freq_days * 86400"
+            );
+            prop_assert!(!next_bill.paid, "next recurring bill must be unpaid");
+        }
     }
 }
