@@ -73,6 +73,7 @@ pub enum Error {
     BatchTooLarge = 9,
     BatchValidationFailed = 10,
     InvalidLimit = 11,
+    InvalidDueDate = 12,
 }
 
 #[contracttype]
@@ -356,6 +357,11 @@ impl BillPayments {
     ) -> Result<u32, Error> {
         owner.require_auth();
         Self::require_not_paused(&env, pause_functions::CREATE_BILL)?;
+
+        let current_time = env.ledger().timestamp();
+        if due_date == 0 || due_date < current_time {
+            return Err(Error::InvalidDueDate);
+        }
 
         if amount <= 0 {
             return Err(Error::InvalidAmount);
@@ -1809,5 +1815,62 @@ mod test {
         let expected = 1_000_000u64 + (14u64 * 86400);
         assert_eq!(next_bill.due_date, expected);
         assert_eq!(next_bill.due_date, 2_209_600);
+    }
+
+    #[test]
+    fn test_create_bill_invalid_due_date() {
+        // 1. Setup: Use your project's helper to create the environment
+        let env = make_env();
+        env.mock_all_auths();
+        // Explicitly set the ledger time to "Now" (e.g., Year 2024)
+        let current_ledger_time = 1_700_000_000;
+        env.ledger().with_mut(|info| {
+            info.timestamp = current_ledger_time;
+        });
+        let cid = env.register_contract(None, BillPayments);
+        let client = BillPaymentsClient::new(&env, &cid);
+        let owner = Address::generate(&env);
+
+        // 2. Scenario Data:
+        // Assuming make_env sets a current timestamp (e.g., 1,700,000,000)
+        // We pick a date clearly in the past and 0.
+        let past_due_date = 946684800; // Year 1999
+        let zero_due_date = 0u64;
+        let name = String::from_str(&env, "Electricity");
+
+        // 3. Execution: Attempt to create bills with invalid dates
+        let result_past = client.try_create_bill(
+            &owner,
+            &name,
+            &1000,          // amount
+            &past_due_date, // due_date
+            &false,         // recurring
+            &0,             // frequency
+        );
+
+        let result_zero = client.try_create_bill(&owner, &name, &1000, &zero_due_date, &false, &0);
+
+        // 4. Assertions: Verify that both calls failed with Error 12
+        assert!(
+            result_past.is_err(),
+            "Creation should have failed for a past date"
+        );
+        assert!(
+            result_zero.is_err(),
+            "Creation should have failed for a zero date"
+        );
+
+        // Check that the error code specifically matches our new InvalidDueDate (12)
+        // Check that the error code specifically matches our new InvalidDueDate
+        match result_past {
+            // 'err' here is inferred to be of type 'Error'
+            Err(Ok(err)) => assert_eq!(err, Error::InvalidDueDate),
+            _ => panic!("Expected contract error InvalidDueDate for past date"),
+        }
+
+        match result_zero {
+            Err(Ok(err)) => assert_eq!(err, Error::InvalidDueDate),
+            _ => panic!("Expected contract error InvalidDueDate for zero date"),
+        }
     }
 }
