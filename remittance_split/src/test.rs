@@ -683,3 +683,24 @@ fn test_update_split_boundary_percentages() {
     assert_eq!(amounts.get(2).unwrap(), 250);
     assert_eq!(amounts.get(3).unwrap(), 250);
 }
+
+#[test]
+fn test_update_split_not_initialized() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let contract_id = env.register_contract(None, RemittanceSplit);
+    let client = RemittanceSplitClient::new(&env, &contract_id);
+    let caller = Address::generate(&env);
+
+    let result = client.try_update_split(&caller, &0, &25, &25, &25, &25);
+    assert_eq!(result, Err(Ok(RemittanceSplitError::NotInitialized)));
+
+    let config = client.get_config();
+    assert!(config.is_none());
+
+    let split = client.get_split();
+    assert_eq!(split.get(0).unwrap(), 50);
+    assert_eq!(split.get(1).unwrap(), 30);
+    assert_eq!(split.get(2).unwrap(), 15);
+    assert_eq!(split.get(3).unwrap(), 5);
+}
