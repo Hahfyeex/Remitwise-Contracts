@@ -222,9 +222,9 @@ See [scripts/README_INVARIANT_TESTS.md](scripts/README_INVARIANT_TESTS.md) for d
 
 ## Gas Benchmarks
 
-See `docs/gas-optimization.md` for methodology, before/after results, and assumptions.
+RemitWise includes a comprehensive gas benchmarking harness for tracking and optimizing contract performance.
 
-### Running Locally
+### Quick Start
 
 Run all benchmarks and generate a JSON report:
 
@@ -234,7 +234,47 @@ Run all benchmarks and generate a JSON report:
 
 This creates `gas_results.json` with CPU and memory costs for all contract operations.
 
-Or run individual contract benchmarks:
+### Regression Detection
+
+Compare current results against baseline to detect performance regressions:
+
+```bash
+./scripts/compare_gas_results.sh benchmarks/baseline.json gas_results.json
+```
+
+The comparison fails if CPU or memory increases exceed configured thresholds (default 10%).
+
+### Update Baseline
+
+After verifying optimizations:
+
+```bash
+./scripts/update_baseline.sh
+```
+
+### Documentation
+
+- **[Benchmarking Guide](benchmarks/README.md)**: Complete benchmarking documentation
+- **[Gas Optimization Guide](docs/gas-optimization.md)**: Optimization strategies and best practices
+- **[Baseline Results](benchmarks/baseline.json)**: Current performance baseline
+- **[Threshold Configuration](benchmarks/thresholds.json)**: Regression detection thresholds
+
+### CI Integration
+
+Gas benchmarks run automatically in CI on every push and pull request. Results are:
+- Compared against baseline for regression detection
+- Uploaded as artifacts (retained for 30 days)
+- Posted as PR comments with comparison details
+
+To view CI results:
+1. Go to Actions tab in GitHub
+2. Select a workflow run
+3. Download the `gas-benchmarks` artifact
+4. View `gas_results.json` for metrics
+
+### Individual Contract Benchmarks
+
+Run benchmarks for a specific contract:
 
 ```bash
 RUST_TEST_THREADS=1 cargo test -p bill_payments --test gas_bench -- --nocapture
@@ -243,57 +283,6 @@ RUST_TEST_THREADS=1 cargo test -p insurance --test gas_bench -- --nocapture
 RUST_TEST_THREADS=1 cargo test -p family_wallet --test gas_bench -- --nocapture
 RUST_TEST_THREADS=1 cargo test -p remittance_split --test gas_bench -- --nocapture
 ```
-
-### Regression Detection
-
-Compare current results against a baseline:
-
-```bash
-# Save current results as baseline
-cp gas_results.json baseline.json
-
-# Make changes, then compare
-./scripts/run_gas_benchmarks.sh
-./scripts/compare_gas_results.sh baseline.json gas_results.json 10
-```
-
-The comparison script fails if CPU or memory increases by more than the threshold (default 10%).
-
-### CI Integration
-
-Gas benchmarks run automatically in CI on every push and pull request. Results are uploaded as artifacts and retained for 30 days.
-
-To view results:
-1. Go to Actions tab in GitHub
-2. Select a workflow run
-3. Download the `gas-benchmarks` artifact
-4. View `gas_results.json` for metrics
-
-## Seed data for local development
-
-After deploying contracts to a local or test network, you can seed them with realistic example data (goals, bills, policies, remittance split, and optionally family members) using deterministic values for stable IDs.
-
-1. **Deploy** the contracts (see [Deployment](DEPLOYMENT.md)) and note the contract IDs.
-2. **Create a signer identity** (if needed) and fund it on the target network:
-   ```bash
-   soroban keys generate deployer
-   # Fund the deployer address (e.g. via friendbot on testnet)
-   ```
-3. **Run the seed script** with your contract IDs and network:
-   ```bash
-   export REMITTANCE_SPLIT_ID=<id>
-   export SAVINGS_GOALS_ID=<id>
-   export BILL_PAYMENTS_ID=<id>
-   export INSURANCE_ID=<id>
-   export NETWORK=testnet
-   export SOURCE=deployer
-   ./scripts/seed_local.sh
-   ```
-   Or pass IDs as arguments: `./scripts/seed_local.sh $REMITTANCE_SPLIT_ID $SAVINGS_GOALS_ID $BILL_PAYMENTS_ID $INSURANCE_ID`
-
-   Optional: set `SEED_FAMILY=1` and `FAMILY_WALLET_ID=<id>` to initialize the family wallet with the owner. Add members later via `add_member` or extend the script.
-
-The script requires the Soroban CLI (or Stellar CLI). It creates three savings goals, three bills, two insurance policies, and one remittance split (50/30/15/5). Re-running on the same deployment will create additional entities; for a clean slate, deploy fresh contracts.
 
 ## Deployment
 
