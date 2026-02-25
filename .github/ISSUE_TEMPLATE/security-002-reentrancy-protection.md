@@ -8,8 +8,8 @@ assignees: ''
 
 ## Security Issue
 
-**Severity:** HIGH  
-**Component:** orchestrator contract  
+**Severity:** HIGH
+**Component:** orchestrator contract
 **Threat ID:** T-RE-01
 
 ## Description
@@ -44,11 +44,11 @@ fn check_reentrancy(env: &Env) {
         .instance()
         .get(&REENTRANCY_GUARD)
         .unwrap_or(false);
-    
+
     if guard {
         panic!("Reentrancy detected");
     }
-    
+
     env.storage().instance().set(&REENTRANCY_GUARD, &true);
 }
 
@@ -62,9 +62,9 @@ pub fn execute_remittance_flow(
     // ... params
 ) -> Result<(), OrchestratorError> {
     check_reentrancy(&env);
-    
+
     // ... existing logic
-    
+
     clear_reentrancy(&env);
     Ok(())
 }

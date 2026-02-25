@@ -8,8 +8,8 @@ assignees: ''
 
 ## Security Issue
 
-**Severity:** HIGH  
-**Component:** family_wallet contract  
+**Severity:** HIGH
+**Component:** family_wallet contract
 **Threat ID:** T-EC-02
 
 ## Description
@@ -43,47 +43,47 @@ pub fn execute_emergency_transfer_now(
 ) -> u64 {
     proposer.require_auth();
     Self::require_not_paused(&env);
-    
+
     // Check emergency mode is active
     let em_mode: bool = env
         .storage()
         .instance()
         .get(&symbol_short!("EM_MODE"))
         .unwrap_or(false);
-    
+
     if !em_mode {
         panic!("Emergency mode not active");
     }
-    
+
     // Get emergency config
     let em_config: EmergencyConfig = env
         .storage()
         .instance()
         .get(&symbol_short!("EM_CONF"))
         .expect("Emergency config not set");
-    
+
     // Check cooldown
     let last_transfer: u64 = env
         .storage()
         .instance()
         .get(&symbol_short!("EM_LAST"))
         .unwrap_or(0);
-    
+
     let current_time = env.ledger().timestamp();
     if current_time < last_transfer + em_config.cooldown {
         panic!("Emergency transfer cooldown not elapsed");
     }
-    
+
     // Check amount limit
     if amount > em_config.max_amount {
         panic!("Emergency transfer exceeds maximum amount");
     }
-    
+
     // Update last transfer time
     env.storage()
         .instance()
         .set(&symbol_short!("EM_LAST"), &current_time);
-    
+
     // ... existing transfer logic
 }
 ```

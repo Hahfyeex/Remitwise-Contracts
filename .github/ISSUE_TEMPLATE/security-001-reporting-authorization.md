@@ -8,8 +8,8 @@ assignees: ''
 
 ## Security Issue
 
-**Severity:** HIGH  
-**Component:** reporting contract  
+**Severity:** HIGH
+**Component:** reporting contract
 **Threat ID:** T-UA-01
 
 ## Description
@@ -44,7 +44,7 @@ pub fn get_remittance_summary(
     period_end: u64,
 ) -> RemittanceSummary {
     caller.require_auth();
-    
+
     // Verify caller is authorized to view user data
     if caller != user {
         // Check ACL or admin status
@@ -53,7 +53,7 @@ pub fn get_remittance_summary(
             panic!("Unauthorized access to user financial data");
         }
     }
-    
+
     // ... existing logic
 }
 ```

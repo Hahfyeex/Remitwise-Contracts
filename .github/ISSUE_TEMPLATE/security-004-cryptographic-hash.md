@@ -8,8 +8,8 @@ assignees: ''
 
 ## Security Issue
 
-**Severity:** MEDIUM  
-**Component:** data_migration module  
+**Severity:** MEDIUM
+**Component:** data_migration module
 **Threat ID:** T-DI-01
 
 ## Description
@@ -45,7 +45,7 @@ impl ExportSnapshot {
         );
         hex::encode(hasher.finalize())
     }
-    
+
     pub fn verify_checksum(&self) -> bool {
         self.header.checksum == self.compute_checksum()
     }

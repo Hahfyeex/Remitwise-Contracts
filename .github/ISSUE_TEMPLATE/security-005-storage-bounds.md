@@ -8,8 +8,8 @@ assignees: ''
 
 ## Security Issue
 
-**Severity:** MEDIUM  
-**Component:** All contracts (savings_goals, bill_payments, insurance)  
+**Severity:** MEDIUM
+**Component:** All contracts (savings_goals, bill_payments, insurance)
 **Threat ID:** T-DOS-01
 
 ## Description
@@ -47,27 +47,27 @@ pub fn create_goal(
 ) -> u32 {
     owner.require_auth();
     Self::require_not_paused(&env, pause_functions::CREATE_GOAL);
-    
+
     // ... existing validation
-    
+
     // Count existing goals for owner
     let goals: Map<u32, SavingsGoal> = env
         .storage()
         .instance()
         .get(&symbol_short!("GOALS"))
         .unwrap_or_else(|| Map::new(&env));
-    
+
     let mut count = 0u32;
     for (_, goal) in goals.iter() {
         if goal.owner == owner {
             count += 1;
         }
     }
-    
+
     if count >= MAX_GOALS_PER_USER {
         panic!("Maximum goals per user exceeded");
     }
-    
+
     // ... existing logic
 }
 ```
