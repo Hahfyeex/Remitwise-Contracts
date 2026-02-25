@@ -1,6 +1,6 @@
 # Rate Limiting Design for Remitwise Contracts
 
-**Document Status:** Design Proposal (No Implementation)  
+**Document Status:** Design Proposal  
 **Audit Finding:** Rate limiting recommended for high-volume scenarios to reduce spam, DoS, and resource exhaustion risk  
 **Last Updated:** February 2026
 
