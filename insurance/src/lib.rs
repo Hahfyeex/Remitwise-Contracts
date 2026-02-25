@@ -1259,8 +1259,7 @@ mod test {
         );
         let events_before = env.events().all().len();
 
-        let result = client.pay_premium(&owner, &policy_id);
-        assert!(result);
+        client.pay_premium(&owner, &policy_id);
 
         let events_after = env.events().all().len();
         assert_eq!(events_after - events_before, 2);
