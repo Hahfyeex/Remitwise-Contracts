@@ -12,6 +12,12 @@ This workspace contains the core smart contracts that power RemitWise's post-rem
 - **insurance**: Micro-insurance policy management and premium payments
 - **family_wallet**: Family governance, multisig approvals, and emergency transfer controls
 
+## CLI Tool
+
+A custom Rust CLI is provided for interacting with the contracts without a UI.
+
+See [cli/README.md](cli/README.md) for usage instructions.
+
 ## Prerequisites
 
 - Rust (latest stable version)
