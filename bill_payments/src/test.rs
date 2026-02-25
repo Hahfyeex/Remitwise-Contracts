@@ -530,6 +530,34 @@ mod testsuit {
     }
 
     #[test]
+    fn test_pay_bill_unauthorized_strict() {
+        let env = Env::default();
+        let contract_id = env.register_contract(None, BillPayments);
+        let client = BillPaymentsClient::new(&env, &contract_id);
+
+        let owner_a = Address::generate(&env);
+        let owner_b = Address::generate(&env);
+
+        env.mock_all_auths();
+        let bill_id = client.create_bill(
+            &owner_a,
+            &String::from_str(&env, "Fraud Test"),
+            &1000,
+            &1000000,
+            &false,
+            &0,
+        );
+
+        let result = client.try_pay_bill(&owner_b, &bill_id);
+
+        assert_eq!(result, Err(Ok(Error::Unauthorized)));
+
+        let bill = client.get_bill(&bill_id).unwrap();
+        assert!(!bill.paid);
+        assert!(bill.paid_at.is_none());
+    }
+
+    #[test]
     fn test_recurring_bill_cancellation() {
         let env = Env::default();
         let contract_id = env.register_contract(None, BillPayments);
