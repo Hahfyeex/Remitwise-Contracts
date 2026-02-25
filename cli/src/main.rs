@@ -1,7 +1,7 @@
+use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 use std::env;
 use std::process::Command;
-use anyhow::{Result, anyhow};
 
 #[derive(Parser)]
 #[command(name = "remitwise-cli")]
@@ -58,9 +58,7 @@ enum BillsCommands {
     /// List unpaid bills
     List,
     /// Pay a bill
-    Pay {
-        bill_id: u32,
-    },
+    Pay { bill_id: u32 },
 }
 
 #[derive(Subcommand)]
@@ -99,9 +97,23 @@ async fn handle_goals(subcommand: GoalsCommands) -> Result<()> {
             let owner = get_env("OWNER_ADDRESS")?;
             run_soroban_invoke(&contract_id, "get_all_goals", &[&owner]).await?;
         }
-        GoalsCommands::Create { name, target_amount, target_date } => {
+        GoalsCommands::Create {
+            name,
+            target_amount,
+            target_date,
+        } => {
             let owner = get_env("OWNER_ADDRESS")?;
-            run_soroban_invoke(&contract_id, "create_goal", &[&owner, &name, &target_amount.to_string(), &target_date.to_string()]).await?;
+            run_soroban_invoke(
+                &contract_id,
+                "create_goal",
+                &[
+                    &owner,
+                    &name,
+                    &target_amount.to_string(),
+                    &target_date.to_string(),
+                ],
+            )
+            .await?;
         }
     }
     Ok(())
@@ -143,9 +155,12 @@ fn get_env(env_var: &str) -> Result<String> {
 
 async fn run_soroban_invoke(contract_id: &str, function: &str, args: &[&str]) -> Result<()> {
     let mut cmd = Command::new("soroban");
-    cmd.arg("contract").arg("invoke")
-        .arg("--id").arg(contract_id)
-        .arg("--").arg(function);
+    cmd.arg("contract")
+        .arg("invoke")
+        .arg("--id")
+        .arg(contract_id)
+        .arg("--")
+        .arg(function);
     for arg in args {
         cmd.arg(arg);
     }
