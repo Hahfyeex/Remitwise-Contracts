@@ -215,6 +215,25 @@ cargo install --locked --version 21.0.0 soroban-cli
 cargo build --release --target wasm32-unknown-unknown
 ```
 
+## Examples
+
+The workspace includes runnable examples for each contract in the `examples/` directory. These examples demonstrate basic read and write operations using the Soroban SDK test environment.
+
+To run an example, use `cargo run --example <example_name>`:
+
+| Contract | Example Command |
+|----------|-----------------|
+| Remittance Split | `cargo run --example remittance_split_example` |
+| Savings Goals | `cargo run --example savings_goals_example` |
+| Bill Payments | `cargo run --example bill_payments_example` |
+| Insurance | `cargo run --example insurance_example` |
+| Family Wallet | `cargo run --example family_wallet_example` |
+| Reporting | `cargo run --example reporting_example` |
+| Orchestrator | `cargo run --example orchestrator_example` |
+
+> [!NOTE]
+> These examples run in a mocked environment and do not require a connection to a Stellar network.
+
 ## Documentation
 
 - [Family Wallet Design (as implemented)](docs/family-wallet-design.md)
