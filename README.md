@@ -446,7 +446,56 @@ RUST_TEST_THREADS=1 cargo test -p remittance_split --test gas_bench -- --nocaptu
 
 ## Deployment
 
-See the [Deployment Guide](DEPLOYMENT.md) for comprehensive deployment instructions.
+### Automated Bootstrap Deployment
+
+The fastest way to deploy all contracts with sensible defaults:
+
+```bash
+# Deploy to testnet with default settings
+./scripts/bootstrap_deploy.sh testnet deployer
+
+# Skip building if contracts are already built
+SKIP_BUILD=1 ./scripts/bootstrap_deploy.sh testnet deployer
+
+# Deploy to mainnet
+./scripts/bootstrap_deploy.sh mainnet deployer
+
+# Custom output file location
+OUTPUT_FILE=./my-contracts.json ./scripts/bootstrap_deploy.sh testnet deployer
+```
+
+The bootstrap script will:
+1. Build all WASM artifacts (unless SKIP_BUILD=1)
+2. Deploy each contract via soroban-cli
+3. Initialize contracts with sensible defaults:
+   - Remittance split: 50% spending, 30% savings, 15% bills, 5% insurance
+   - One example savings goal
+   - One example bill
+   - One example insurance policy
+4. Output contract IDs in a JSON file (default: `deployed-contracts.json`)
+
+The generated JSON file can be easily consumed by frontend/backend:
+
+```json
+{
+  "network": "testnet",
+  "deployer": "GXXXXXXX...",
+  "deployed_at": "2024-01-15T10:30:00Z",
+  "contracts": {
+    "remittance_split": "CXXXXXXX...",
+    "savings_goals": "CXXXXXXX...",
+    "bill_payments": "CXXXXXXX...",
+    "insurance": "CXXXXXXX...",
+    "family_wallet": "CXXXXXXX...",
+    "reporting": "CXXXXXXX...",
+    "orchestrator": "CXXXXXXX..."
+  }
+}
+```
+
+### Manual Deployment
+
+See the [Deployment Guide](DEPLOYMENT.md) for comprehensive manual deployment instructions.
 
 Quick deploy to testnet:
 
