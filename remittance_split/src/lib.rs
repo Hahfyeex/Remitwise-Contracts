@@ -1,4 +1,5 @@
 #![no_std]
+mod test;
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, token::TokenClient, vec,
@@ -494,19 +495,20 @@ impl RemittanceSplit {
         from.require_auth();
         Self::require_nonce(&env, &from, nonce)?;
 
-        let amounts = Self::calculate_split(env.clone(), total_amount)?;
-        let recipients = [
-            accounts.spending,
-            accounts.savings,
-            accounts.bills,
-            accounts.insurance,
-        ];
+        let amounts = Self::calculate_split_amounts(&env, total_amount, false)?;
         let token = TokenClient::new(&env, &usdc_contract);
 
-        for (amount, recipient) in amounts.into_iter().zip(recipients.iter()) {
-            if amount > 0 {
-                token.transfer(&from, recipient, &amount);
-            }
+        if amounts[0] > 0 {
+            token.transfer(&from, &accounts.spending, &amounts[0]);
+        }
+        if amounts[1] > 0 {
+            token.transfer(&from, &accounts.savings, &amounts[1]);
+        }
+        if amounts[2] > 0 {
+            token.transfer(&from, &accounts.bills, &amounts[2]);
+        }
+        if amounts[3] > 0 {
+            token.transfer(&from, &accounts.insurance, &amounts[3]);
         }
 
         Self::increment_nonce(&env, &from)?;
@@ -538,9 +540,16 @@ impl RemittanceSplit {
     }
 
     pub fn get_nonce(env: Env, address: Address) -> u64 {
+        Self::get_nonce_value(&env, &address)
+    }
+
+    fn get_nonce_value(env: &Env, address: &Address) -> u64 {
         let nonces: Option<Map<Address, u64>> =
             env.storage().instance().get(&symbol_short!("NONCES"));
-        nonces.as_ref().and_then(|m| m.get(address)).unwrap_or(0)
+        nonces
+            .as_ref()
+            .and_then(|m: &Map<Address, u64>| m.get(address.clone()))
+            .unwrap_or(0)
     }
 
     pub fn export_snapshot(
@@ -645,7 +654,7 @@ impl RemittanceSplit {
         address: &Address,
         expected: u64,
     ) -> Result<(), RemittanceSplitError> {
-        let current = Self::get_nonce(env.clone(), address.clone());
+        let current = Self::get_nonce_value(env, address);
         if expected != current {
             return Err(RemittanceSplitError::InvalidNonce);
         }
@@ -653,7 +662,7 @@ impl RemittanceSplit {
     }
 
     fn increment_nonce(env: &Env, address: &Address) -> Result<(), RemittanceSplitError> {
-        let current = Self::get_nonce(env.clone(), address.clone());
+        let current = Self::get_nonce_value(env, address);
         let next = current
             .checked_add(1)
             .ok_or(RemittanceSplitError::Overflow)?;
@@ -707,6 +716,58 @@ impl RemittanceSplit {
         env.storage().instance().set(&symbol_short!("AUDIT"), &log);
     }
 
+    fn calculate_split_amounts(
+        env: &Env,
+        total_amount: i128,
+        emit_events: bool,
+    ) -> Result<[i128; 4], RemittanceSplitError> {
+        if total_amount <= 0 {
+            return Err(RemittanceSplitError::InvalidAmount);
+        }
+
+        let split = Self::get_split(env);
+        let s0 = split.get(0).unwrap() as i128;
+        let s1 = split.get(1).unwrap() as i128;
+        let s2 = split.get(2).unwrap() as i128;
+
+        let spending = total_amount
+            .checked_mul(s0)
+            .and_then(|n| n.checked_div(100))
+            .ok_or(RemittanceSplitError::Overflow)?;
+        let savings = total_amount
+            .checked_mul(s1)
+            .and_then(|n| n.checked_div(100))
+            .ok_or(RemittanceSplitError::Overflow)?;
+        let bills = total_amount
+            .checked_mul(s2)
+            .and_then(|n| n.checked_div(100))
+            .ok_or(RemittanceSplitError::Overflow)?;
+        let insurance = total_amount
+            .checked_sub(spending)
+            .and_then(|n| n.checked_sub(savings))
+            .and_then(|n| n.checked_sub(bills))
+            .ok_or(RemittanceSplitError::Overflow)?;
+
+        if emit_events {
+            let event = SplitCalculatedEvent {
+                total_amount,
+                spending_amount: spending,
+                savings_amount: savings,
+                bills_amount: bills,
+                insurance_amount: insurance,
+                timestamp: env.ledger().timestamp(),
+            };
+            env.events().publish((SPLIT_CALCULATED,), event);
+            env.events().publish(
+                (symbol_short!("split"), SplitEvent::Calculated),
+                total_amount,
+            );
+        }
+
+        Ok([spending, savings, bills, insurance])
+    }
+
+    /// Extend the TTL of instance storage
     fn extend_instance_ttl(env: &Env) {
         env.storage()
             .instance()
