@@ -352,6 +352,7 @@ impl BillPayments {
     // Core bill operations
     // -----------------------------------------------------------------------
 
+    #[allow(clippy::too_many_arguments)]
     pub fn create_bill(
         env: Env,
         owner: Address,
@@ -378,7 +379,7 @@ impl BillPayments {
         }
 
         // Resolve default currency: blank input → "XLM"
-        let resolved_currency = if currency.len() == 0 {
+        let resolved_currency = if currency.is_empty() {
             String::from_str(&env, "XLM")
         } else {
             currency
@@ -1316,7 +1317,7 @@ mod test {
                 &(env.ledger().timestamp() + 86400 * (i as u64 + 1)),
                 &false,
                 &0,
-                &String::from_str(&env, "XLM"),
+                &String::from_str(env, "XLM"),
             );
             ids.push_back(id);
         }
