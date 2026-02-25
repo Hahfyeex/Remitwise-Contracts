@@ -20,8 +20,6 @@ pub const MAX_PAGE_LIMIT: u32 = 50;
 
 #[derive(Clone, Debug)]
 #[contracttype]
-#[derive(Clone, Debug)]
-#[contracttype]
 pub struct Bill {
     pub id: u32,
     pub owner: Address,
@@ -34,6 +32,7 @@ pub struct Bill {
     pub created_at: u64,
     pub paid_at: Option<u64>,
     pub schedule_id: Option<u32>,
+    pub tags: Vec<String>,
     /// Intended currency/asset for this bill (e.g. "XLM", "USDC", "NGN").
     /// Defaults to "XLM" for entries created before this field was introduced.
     pub currency: String,
@@ -84,10 +83,8 @@ pub enum Error {
     EmptyTags = 13,
 }
 
-#[contracttype]
 #[derive(Clone)]
 #[contracttype]
-#[derive(Clone)]
 pub struct ArchivedBill {
     pub id: u32,
     pub owner: Address,
@@ -95,6 +92,7 @@ pub struct ArchivedBill {
     pub amount: i128,
     pub paid_at: u64,
     pub archived_at: u64,
+    pub tags: Vec<String>,
     /// Intended currency/asset carried over from the originating `Bill`.
     pub currency: String,
 }
