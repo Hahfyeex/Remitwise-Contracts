@@ -413,6 +413,7 @@ impl BillPayments {
             created_at: current_time,
             paid_at: None,
             schedule_id: None,
+            tags: Vec::new(&env),
             currency: resolved_currency,
         };
 
@@ -482,6 +483,7 @@ impl BillPayments {
                 created_at: current_time,
                 paid_at: None,
                 schedule_id: bill.schedule_id,
+                tags: bill.tags.clone(),
                 currency: bill.currency.clone(),
             };
             bills.set(next_id, next_bill);
@@ -843,6 +845,7 @@ impl BillPayments {
                         amount: bill.amount,
                         paid_at,
                         archived_at: current_time,
+                        tags: bill.tags.clone(),
                         currency: bill.currency.clone(),
                     };
                     archived.set(id, archived_bill);
@@ -910,6 +913,7 @@ impl BillPayments {
             created_at: archived_bill.paid_at,
             paid_at: Some(archived_bill.paid_at),
             schedule_id: None,
+            tags: archived_bill.tags.clone(),
             currency: archived_bill.currency.clone(),
         };
 
@@ -1034,6 +1038,7 @@ impl BillPayments {
                     created_at: current_time,
                     paid_at: None,
                     schedule_id: bill.schedule_id,
+                    tags: bill.tags.clone(),
                     currency: bill.currency.clone(),
                 };
                 bills.set(next_id, next_bill);
