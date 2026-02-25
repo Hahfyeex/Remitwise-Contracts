@@ -1,13 +1,13 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Symbol, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map, String,
+    Symbol, Vec,
 };
 
 // Event topics
 const GOAL_CREATED: Symbol = symbol_short!("created");
 const FUNDS_ADDED: Symbol = symbol_short!("added");
 const GOAL_COMPLETED: Symbol = symbol_short!("completed");
-
 
 #[derive(Clone)]
 #[contracttype]
@@ -153,7 +153,6 @@ pub enum SavingsGoalError {
     Unauthorized = 4,
     TargetAmountMustBePositive = 5,
 }
-
 
 #[contractimpl]
 impl SavingsGoalContract {
@@ -440,7 +439,7 @@ impl SavingsGoalContract {
             None => {
                 Self::append_audit(&env, symbol_short!("add"), &caller, false);
                 panic!("Goal not found");
-        }
+            }
         };
 
         // Access control: verify caller is the owner
@@ -573,7 +572,6 @@ impl SavingsGoalContract {
             (count, caller),
         );
         count
-
     }
 
     pub fn withdraw_from_goal(env: Env, caller: Address, goal_id: u32, amount: i128) -> i128 {

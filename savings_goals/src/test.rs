@@ -214,7 +214,12 @@ fn test_withdraw_from_goal_success() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Success"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Success"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
     client.add_to_goal(&user, &id, &500);
@@ -228,7 +233,6 @@ fn test_withdraw_from_goal_success() {
 
 #[test]
 fn test_withdraw_from_goal_insufficient_balance() {
-
     let env = Env::default();
     let contract_id = env.register_contract(None, SavingsGoalContract);
     let client = SavingsGoalContractClient::new(&env, &contract_id);
@@ -236,7 +240,12 @@ fn test_withdraw_from_goal_insufficient_balance() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Insufficient"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Insufficient"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
     client.add_to_goal(&user, &id, &100);
@@ -247,7 +256,6 @@ fn test_withdraw_from_goal_insufficient_balance() {
 
 #[test]
 fn test_withdraw_from_goal_locked() {
-
     let env = Env::default();
     let contract_id = env.register_contract(None, SavingsGoalContract);
     let client = SavingsGoalContractClient::new(&env, &contract_id);
@@ -264,7 +272,6 @@ fn test_withdraw_from_goal_locked() {
 
 #[test]
 fn test_withdraw_from_goal_unauthorized() {
-
     let env = Env::default();
     let contract_id = env.register_contract(None, SavingsGoalContract);
     let client = SavingsGoalContractClient::new(&env, &contract_id);
@@ -273,7 +280,12 @@ fn test_withdraw_from_goal_unauthorized() {
 
     client.init();
     env.mock_all_auths();
-    let id = client.create_goal(&user, &String::from_str(&env, "Unauthorized"), &1000, &2000000000);
+    let id = client.create_goal(
+        &user,
+        &String::from_str(&env, "Unauthorized"),
+        &1000,
+        &2000000000,
+    );
 
     client.unlock_goal(&user, &id);
     client.add_to_goal(&user, &id, &500);
@@ -1443,4 +1455,3 @@ fn test_get_all_goals_backward_compat() {
     let all = client.get_all_goals(&owner);
     assert_eq!(all.len(), 5);
 }
-

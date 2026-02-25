@@ -5,7 +5,6 @@ use soroban_sdk::{
     Address, Env, Map, Symbol, Vec,
 };
 
-
 // Event topics
 const SPLIT_INITIALIZED: Symbol = symbol_short!("init");
 const SPLIT_CALCULATED: Symbol = symbol_short!("calc");
