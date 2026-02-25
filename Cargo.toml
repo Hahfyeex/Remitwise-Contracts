@@ -15,6 +15,7 @@ members = [
     "reporting",
     "orchestrator",
     "scenarios",
+    "emergency_killswitch",
 ]
 resolver = "2"
 
