@@ -274,7 +274,10 @@ fn test_configure_addresses_unauthorized() {
         &insurance,
         &family_wallet,
     );
-    assert!(result.is_err(), "configure_addresses should fail for non-admin");
+    assert!(
+        result.is_err(),
+        "configure_addresses should fail for non-admin"
+    );
 }
 
 #[test]

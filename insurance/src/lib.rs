@@ -1548,7 +1548,7 @@ mod test {
     fn test_pay_premium_after_deactivate() {
         let env = Env::default();
         env.mock_all_auths();
-        
+
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
         let owner = Address::generate(&env);
@@ -1576,7 +1576,10 @@ mod test {
 
         // 3. Attempt to pay premium — must fail
         let result = client.try_pay_premium(&owner, &policy_id);
-        assert!(result.is_err(), "pay_premium should fail for inactive policy");
+        assert!(
+            result.is_err(),
+            "pay_premium should fail for inactive policy"
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════
