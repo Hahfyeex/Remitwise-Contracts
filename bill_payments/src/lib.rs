@@ -1,22 +1,15 @@
 #![no_std]
 
-mod events;
-use events::{EventCategory, EventPriority, RemitwiseEvents};
+use remitwise_common::{
+    clamp_limit, EventCategory, EventPriority, RemitwiseEvents, ARCHIVE_BUMP_AMOUNT,
+    ARCHIVE_LIFETIME_THRESHOLD, CONTRACT_VERSION, DEFAULT_PAGE_LIMIT, INSTANCE_BUMP_AMOUNT,
+    INSTANCE_LIFETIME_THRESHOLD, MAX_BATCH_SIZE, MAX_PAGE_LIMIT,
+};
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map, String,
     Symbol, Vec,
 };
-
-// Storage TTL constants
-const INSTANCE_LIFETIME_THRESHOLD: u32 = 17280;
-const INSTANCE_BUMP_AMOUNT: u32 = 518400;
-const ARCHIVE_LIFETIME_THRESHOLD: u32 = 17280;
-const ARCHIVE_BUMP_AMOUNT: u32 = 2592000;
-
-/// Pagination limits
-pub const DEFAULT_PAGE_LIMIT: u32 = 20;
-pub const MAX_PAGE_LIMIT: u32 = 50;
 
 #[derive(Clone, Debug)]
 #[contracttype]
@@ -150,15 +143,6 @@ impl BillPayments {
 
     /// Clamp a caller-supplied limit to [1, MAX_PAGE_LIMIT].
     /// A value of 0 is treated as DEFAULT_PAGE_LIMIT.
-    fn clamp_limit(limit: u32) -> u32 {
-        if limit == 0 {
-            DEFAULT_PAGE_LIMIT
-        } else if limit > MAX_PAGE_LIMIT {
-            MAX_PAGE_LIMIT
-        } else {
-            limit
-        }
-    }
 
     // -----------------------------------------------------------------------
     // Pause / upgrade
@@ -528,7 +512,7 @@ impl BillPayments {
     /// `BillPage { items, next_cursor, count }`.
     /// When `next_cursor == 0` there are no more pages.
     pub fn get_unpaid_bills(env: Env, owner: Address, cursor: u32, limit: u32) -> BillPage {
-        let limit = Self::clamp_limit(limit);
+        let limit = clamp_limit(limit);
         let bills: Map<u32, Bill> = env
             .storage()
             .instance()
@@ -557,7 +541,7 @@ impl BillPayments {
     /// Same cursor/limit semantics as `get_unpaid_bills`.
     pub fn get_all_bills_for_owner(env: Env, owner: Address, cursor: u32, limit: u32) -> BillPage {
         owner.require_auth();
-        let limit = Self::clamp_limit(limit);
+        let limit = clamp_limit(limit);
         let bills: Map<u32, Bill> = env
             .storage()
             .instance()
@@ -585,7 +569,7 @@ impl BillPayments {
     ///
     /// Same cursor/limit semantics.
     pub fn get_overdue_bills(env: Env, cursor: u32, limit: u32) -> BillPage {
-        let limit = Self::clamp_limit(limit);
+        let limit = clamp_limit(limit);
         let current_time = env.ledger().timestamp();
         let bills: Map<u32, Bill> = env
             .storage()
@@ -623,7 +607,7 @@ impl BillPayments {
             return Err(Error::Unauthorized);
         }
 
-        let limit = Self::clamp_limit(limit);
+        let limit = clamp_limit(limit);
         let bills: Map<u32, Bill> = env
             .storage()
             .instance()
@@ -710,7 +694,7 @@ impl BillPayments {
         cursor: u32,
         limit: u32,
     ) -> ArchivedBillPage {
-        let limit = Self::clamp_limit(limit);
+        let limit = clamp_limit(limit);
         let archived: Map<u32, ArchivedBill> = env
             .storage()
             .instance()

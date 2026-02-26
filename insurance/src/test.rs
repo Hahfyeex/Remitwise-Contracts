@@ -32,7 +32,7 @@ fn test_create_policy() {
     env.mock_all_auths();
 
     let name = String::from_str(&env, "Health Policy");
-    let coverage_type = String::from_str(&env, "Health");
+    let coverage_type = CoverageType::Health;
 
     let policy_id = client.create_policy(
         &owner,
@@ -381,7 +381,7 @@ fn test_get_total_monthly_premium_one_policy() {
     client.create_policy(
         &owner,
         &String::from_str(&env, "Single Policy"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &10000,
     );
@@ -403,21 +403,21 @@ fn test_get_total_monthly_premium_multiple_active_policies() {
     client.create_policy(
         &owner,
         &String::from_str(&env, "Policy 1"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &100,
         &1000,
     );
     client.create_policy(
         &owner,
         &String::from_str(&env, "Policy 2"),
-        &String::from_str(&env, "life"),
+        &CoverageType::Life,
         &200,
         &2000,
     );
     client.create_policy(
         &owner,
         &String::from_str(&env, "Policy 3"),
-        &String::from_str(&env, "emergency"),
+        &CoverageType::Auto,
         &300,
         &3000,
     );
@@ -439,14 +439,14 @@ fn test_get_total_monthly_premium_deactivated_policy_excluded() {
     let policy1 = client.create_policy(
         &owner,
         &String::from_str(&env, "Policy 1"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &100,
         &1000,
     );
     let policy2 = client.create_policy(
         &owner,
         &String::from_str(&env, "Policy 2"),
-        &String::from_str(&env, "life"),
+        &CoverageType::Life,
         &200,
         &2000,
     );
@@ -477,14 +477,14 @@ fn test_get_total_monthly_premium_different_owner_isolation() {
     client.create_policy(
         &owner_a,
         &String::from_str(&env, "Policy A1"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &100,
         &1000,
     );
     client.create_policy(
         &owner_a,
         &String::from_str(&env, "Policy A2"),
-        &String::from_str(&env, "life"),
+        &CoverageType::Life,
         &200,
         &2000,
     );
@@ -568,7 +568,7 @@ fn test_create_premium_schedule() {
     let policy_id = client.create_policy(
         &owner,
         &String::from_str(&env, "Health Insurance"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &50000,
     );
@@ -597,7 +597,7 @@ fn test_modify_premium_schedule() {
     let policy_id = client.create_policy(
         &owner,
         &String::from_str(&env, "Health Insurance"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &50000,
     );
@@ -623,7 +623,7 @@ fn test_cancel_premium_schedule() {
     let policy_id = client.create_policy(
         &owner,
         &String::from_str(&env, "Health Insurance"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &50000,
     );
@@ -648,7 +648,7 @@ fn test_execute_due_premium_schedules() {
     let policy_id = client.create_policy(
         &owner,
         &String::from_str(&env, "Health Insurance"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &50000,
     );
@@ -706,7 +706,7 @@ fn test_execute_missed_premium_schedules() {
     let policy_id = client.create_policy(
         &owner,
         &String::from_str(&env, "Health Insurance"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &50000,
     );
@@ -734,7 +734,7 @@ fn test_get_premium_schedules() {
     let policy_id1 = client.create_policy(
         &owner,
         &String::from_str(&env, "Health Insurance"),
-        &String::from_str(&env, "health"),
+        &CoverageType::Health,
         &500,
         &50000,
     );
@@ -767,7 +767,7 @@ fn test_create_policy_emits_event() {
     env.mock_all_auths();
 
     let name = String::from_str(&env, "Health Policy");
-    let coverage_type = String::from_str(&env, "Health");
+    let coverage_type = CoverageType::Health;
 
     let policy_id = client.create_policy(&owner, &name, &coverage_type, &100, &10000);
 

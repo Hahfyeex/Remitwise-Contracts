@@ -11,6 +11,29 @@ This workspace contains the core smart contracts that power RemitWise's post-rem
 - **bill_payments**: Automated bill payment tracking and scheduling
 - **insurance**: Micro-insurance policy management and premium payments
 - **family_wallet**: Family governance, multisig approvals, and emergency transfer controls
+- **remitwise-common**: Shared types and utilities used across contracts
+
+## Shared Components
+
+### remitwise-common
+
+A common crate containing shared types, enums, and constants used across multiple contracts.
+
+**Shared Types:**
+- `Category`: Financial categories (Spending, Savings, Bills, Insurance)
+- `FamilyRole`: Access control roles (Owner, Admin, Member, Viewer)
+- `CoverageType`: Insurance coverage types (Health, Life, Property, Auto, Liability)
+- `EventCategory` & `EventPriority`: Event logging categories and priorities
+
+**Shared Constants:**
+- Pagination limits (`DEFAULT_PAGE_LIMIT`, `MAX_PAGE_LIMIT`)
+- Storage TTL values (`INSTANCE_LIFETIME_THRESHOLD`, `ARCHIVE_LIFETIME_THRESHOLD`, etc.)
+- Contract versioning (`CONTRACT_VERSION`)
+- Batch operation limits (`MAX_BATCH_SIZE`)
+
+**Shared Utilities:**
+- `clamp_limit()`: Helper for pagination limit validation
+- `RemitwiseEvents`: Standardized event emission with `emit()` and `emit_batch()` methods
 
 ## CLI Tool
 

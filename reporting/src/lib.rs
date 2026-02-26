@@ -3,6 +3,8 @@ use soroban_sdk::{
     contract, contractclient, contractimpl, contracttype, symbol_short, Address, Env, Map, Vec,
 };
 
+use remitwise_common::Category;
+
 // Storage TTL constants for active data
 const INSTANCE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
 const INSTANCE_BUMP_AMOUNT: u32 = 518400; // ~30 days
@@ -10,17 +12,6 @@ const INSTANCE_BUMP_AMOUNT: u32 = 518400; // ~30 days
 // Storage TTL constants for archived data (longer retention, less frequent access)
 const ARCHIVE_LIFETIME_THRESHOLD: u32 = 17280; // ~1 day
 const ARCHIVE_BUMP_AMOUNT: u32 = 2592000; // ~180 days (6 months)
-
-/// Category for financial breakdown
-#[contracttype]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[repr(u32)]
-pub enum Category {
-    Spending = 1,
-    Savings = 2,
-    Bills = 3,
-    Insurance = 4,
-}
 
 /// Financial health score (0-100)
 #[contracttype]
