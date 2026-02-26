@@ -60,8 +60,6 @@ pub mod pause_functions {
 
 #[derive(Clone)]
 #[contracttype]
-#[derive(Clone)]
-#[contracttype]
 pub struct InsurancePolicy {
     pub id: u32,
     pub owner: Address,
