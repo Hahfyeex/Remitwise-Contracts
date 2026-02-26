@@ -13,6 +13,8 @@ use soroban_sdk::{
 
 #[derive(Clone, Debug)]
 #[contracttype]
+#[derive(Clone, Debug)]
+#[contracttype]
 pub struct Bill {
     pub id: u32,
     pub owner: Address,
@@ -29,6 +31,7 @@ pub struct Bill {
     /// Defaults to "XLM" for entries created before this field was introduced.
     pub currency: String,
 }
+
 
 /// Paginated result for bill queries
 #[contracttype]
@@ -70,8 +73,12 @@ pub enum Error {
     BatchTooLarge = 9,
     BatchValidationFailed = 10,
     InvalidLimit = 11,
+    InvalidTag = 12,
+    EmptyTags = 13,
 }
 
+#[contracttype]
+#[derive(Clone)]
 #[contracttype]
 #[derive(Clone)]
 pub struct ArchivedBill {
@@ -84,6 +91,7 @@ pub struct ArchivedBill {
     /// Intended currency/asset carried over from the originating `Bill`.
     pub currency: String,
 }
+
 
 /// Paginated result for archived bill queries
 #[contracttype]

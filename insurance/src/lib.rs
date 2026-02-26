@@ -80,6 +80,8 @@ pub mod pause_functions {
 /// Insurance policy data structure with owner tracking for access control
 #[derive(Clone)]
 #[contracttype]
+#[derive(Clone)]
+#[contracttype]
 pub struct InsurancePolicy {
     pub id: u32,
     pub owner: Address,
@@ -90,6 +92,20 @@ pub struct InsurancePolicy {
     pub active: bool,
     pub next_payment_date: u64,
     pub schedule_id: Option<u32>,
+    pub tags: Vec<String>,
+}
+
+
+/// Paginated result for insurance policy queries
+#[contracttype]
+#[derive(Clone)]
+pub struct PolicyPage {
+    /// Policies for this page
+    pub items: Vec<InsurancePolicy>,
+    /// Pass as `cursor` for the next page. 0 = no more pages.
+    pub next_cursor: u32,
+    /// Number of items returned
+    pub count: u32,
 }
 
 /// Schedule for automatic premium payments
@@ -319,6 +335,106 @@ impl Insurance {
     }
 
     // -----------------------------------------------------------------------
+    // Tag management
+    // -----------------------------------------------------------------------
+
+    fn validate_tags(tags: &Vec<String>) {
+        if tags.is_empty() {
+            panic!("Tags cannot be empty");
+        }
+        for tag in tags.iter() {
+            if tag.len() == 0 || tag.len() > 32 {
+                panic!("Tag must be between 1 and 32 characters");
+            }
+        }
+    }
+
+    pub fn add_tags_to_policy(
+        env: Env,
+        caller: Address,
+        policy_id: u32,
+        tags: Vec<String>,
+    ) {
+        caller.require_auth();
+        Self::validate_tags(&tags);
+        Self::extend_instance_ttl(&env);
+
+        let mut policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut policy = policies.get(policy_id).expect("Policy not found");
+
+        if policy.owner != caller {
+            panic!("Only the policy owner can add tags");
+        }
+
+        for tag in tags.iter() {
+            policy.tags.push_back(tag);
+        }
+
+        policies.set(policy_id, policy);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("POLICIES"), &policies);
+
+        env.events().publish(
+            (symbol_short!("insure"), symbol_short!("tags_add")),
+            (policy_id, caller, tags),
+        );
+    }
+
+    pub fn remove_tags_from_policy(
+        env: Env,
+        caller: Address,
+        policy_id: u32,
+        tags: Vec<String>,
+    ) {
+        caller.require_auth();
+        Self::validate_tags(&tags);
+        Self::extend_instance_ttl(&env);
+
+        let mut policies: Map<u32, InsurancePolicy> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("POLICIES"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut policy = policies.get(policy_id).expect("Policy not found");
+
+        if policy.owner != caller {
+            panic!("Only the policy owner can remove tags");
+        }
+
+        let mut new_tags = Vec::new(&env);
+        for existing_tag in policy.tags.iter() {
+            let mut should_keep = true;
+            for remove_tag in tags.iter() {
+                if existing_tag == remove_tag {
+                    should_keep = false;
+                    break;
+                }
+            }
+            if should_keep {
+                new_tags.push_back(existing_tag);
+            }
+        }
+
+        policy.tags = new_tags;
+        policies.set(policy_id, policy);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("POLICIES"), &policies);
+
+        env.events().publish(
+            (symbol_short!("insure"), symbol_short!("tags_rem")),
+            (policy_id, caller, tags),
+        );
+    }
+
+    // -----------------------------------------------------------------------
     // Core policy operations (unchanged)
     // -----------------------------------------------------------------------
 
@@ -382,6 +498,7 @@ impl Insurance {
             active: true,
             next_payment_date,
             schedule_id: None,
+            tags: Vec::new(&env),
         };
 
         policies.set(next_id, policy);
