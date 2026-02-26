@@ -1,6 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Symbol, Vec,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Symbol, Vec,
 };
 
 // Event topics
@@ -99,8 +99,9 @@ pub struct PremiumSchedule {
     pub missed_count: u32,
 }
 
-#[contracttype]
-#[derive(Clone, Copy)]
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
 pub enum InsuranceError {
     InvalidPremium = 1,
     InvalidCoverage = 2,
@@ -110,48 +111,7 @@ pub enum InsuranceError {
     BatchTooLarge = 6,
 }
 
-impl From<InsuranceError> for soroban_sdk::Error {
-    fn from(err: InsuranceError) -> Self {
-        match err {
-            InsuranceError::InvalidPremium => soroban_sdk::Error::from((
-                soroban_sdk::xdr::ScErrorType::Contract,
-                soroban_sdk::xdr::ScErrorCode::InvalidInput,
-            )),
-            InsuranceError::InvalidCoverage => soroban_sdk::Error::from((
-                soroban_sdk::xdr::ScErrorType::Contract,
-                soroban_sdk::xdr::ScErrorCode::InvalidInput,
-            )),
-            InsuranceError::PolicyNotFound => soroban_sdk::Error::from((
-                soroban_sdk::xdr::ScErrorType::Contract,
-                soroban_sdk::xdr::ScErrorCode::MissingValue,
-            )),
-            InsuranceError::PolicyInactive => soroban_sdk::Error::from((
-                soroban_sdk::xdr::ScErrorType::Contract,
-                soroban_sdk::xdr::ScErrorCode::InvalidAction,
-            )),
-            InsuranceError::Unauthorized => soroban_sdk::Error::from((
-                soroban_sdk::xdr::ScErrorType::Contract,
-                soroban_sdk::xdr::ScErrorCode::InvalidAction,
-            )),
-            InsuranceError::BatchTooLarge => soroban_sdk::Error::from((
-                soroban_sdk::xdr::ScErrorType::Contract,
-                soroban_sdk::xdr::ScErrorCode::InvalidInput,
-            )),
-        }
-    }
-}
 
-impl From<&InsuranceError> for soroban_sdk::Error {
-    fn from(err: &InsuranceError) -> Self {
-        (*err).into()
-    }
-}
-
-impl From<soroban_sdk::Error> for InsuranceError {
-    fn from(_err: soroban_sdk::Error) -> Self {
-        InsuranceError::Unauthorized
-    }
-}
 
 #[contracttype]
 #[derive(Clone)]
@@ -1118,14 +1078,12 @@ mod test_events {
         // No policies created — policy ID 999 does not exist
         let result = client.try_pay_premium(&owner, &999u32);
 
-        assert!(
-            result.is_err(),
-            "pay_premium must fail when policy does not exist"
-        );
+        // Contract panics when policy not found
+        assert!(result.is_err());
     }
 
     #[test]
-    fn test_get_active_policies_paginated() {
+    fn test_get_active_policies_pagination() {
         let env = Env::default();
         env.mock_all_auths();
         let id = env.register_contract(None, Insurance);
@@ -1270,8 +1228,7 @@ mod test_events {
         );
         let events_before = env.events().all().len();
 
-        let result = client.pay_premium(&owner, &policy_id);
-        assert!(result);
+        client.pay_premium(&owner, &policy_id);
 
         let events_after = env.events().all().len();
         assert_eq!(events_after - events_before, 2);
@@ -1554,13 +1511,13 @@ mod test_events {
     // Test: pay_premium after deactivate_policy (#104)
     // ──────────────────────────────────────────────────────────────────
 
-    /// After deactivating a policy, `pay_premium` must panic with
-    /// "Policy is not active". The policy must remain inactive.
-    #[test]
+    /// After deactivating a policy, `pay_premium` must return an error.
+    /// The policy must remain inactive.
     #[test]
     fn test_pay_premium_after_deactivate() {
         let env = Env::default();
         env.mock_all_auths();
+
         let contract_id = env.register_contract(None, Insurance);
         let client = InsuranceClient::new(&env, &contract_id);
         let owner = Address::generate(&env);

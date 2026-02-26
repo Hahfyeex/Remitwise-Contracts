@@ -114,8 +114,7 @@ fn test_pay_premium() {
     ledger_info.timestamp += 1000;
     env.ledger().set(ledger_info);
 
-    let success = client.pay_premium(&owner, &policy_id);
-    assert!(success);
+    client.pay_premium(&owner, &policy_id);
 
     let updated_policy = client.get_policy(&policy_id).unwrap();
 
@@ -973,8 +972,8 @@ fn test_pay_premium_success() {
     // Advance time
     set_time(&env, env.ledger().timestamp() + 86400); // +1 day
 
-    let result = client.pay_premium(&owner, &policy_id);
-    assert!(result);
+    let result = client.try_pay_premium(&owner, &policy_id);
+    assert!(result.is_ok());
 
     let updated_policy = client.get_policy(&policy_id).unwrap();
 
@@ -1225,18 +1224,14 @@ fn test_multiple_policies_same_owner() {
     // Pay premiums for all policies
     set_time(&env, env.ledger().timestamp() + 86400); // +1 day
 
-    let result1 = client.pay_premium(&owner, &policy1);
-    let result2 = client.pay_premium(&owner, &policy2);
-    let result3 = client.pay_premium(&owner, &policy3);
-
-    assert!(result1 && result2 && result3);
+    client.pay_premium(&owner, &policy1);
+    client.pay_premium(&owner, &policy2);
+    client.pay_premium(&owner, &policy3);
 
     // Deactivate policies
-    let deactivate1 = client.deactivate_policy(&owner, &policy1);
-    let deactivate2 = client.deactivate_policy(&owner, &policy2);
-    let deactivate3 = client.deactivate_policy(&owner, &policy3);
-
-    assert!(deactivate1 && deactivate2 && deactivate3);
+    client.deactivate_policy(&owner, &policy1);
+    client.deactivate_policy(&owner, &policy2);
+    client.deactivate_policy(&owner, &policy3);
 
     // Verify all policies are now inactive
     let p1_after = client.get_policy(&policy1).unwrap();

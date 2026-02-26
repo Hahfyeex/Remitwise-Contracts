@@ -177,6 +177,26 @@
                             }
                           ]
                         }
+                      },
+                      {
+                        "key": {
+                          "symbol": "PRM_TOT"
+                        },
+                        "val": {
+                          "map": [
+                            {
+                              "key": {
+                                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                              },
+                              "val": {
+                                "i128": {
+                                  "hi": 0,
+                                  "lo": 100
+                                }
+                              }
+                            }
+                          ]
+                        }
                       }
                     ]
                   }
@@ -475,7 +495,7 @@
             ],
             "data": {
               "error": {
-                "contract": 2
+                "contract": 5
               }
             }
           }
@@ -496,7 +516,7 @@
               },
               {
                 "error": {
-                  "contract": 2
+                  "contract": 5
                 }
               }
             ],
@@ -521,7 +541,7 @@
               },
               {
                 "error": {
-                  "contract": 2
+                  "contract": 5
                 }
               }
             ],
