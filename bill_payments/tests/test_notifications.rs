@@ -26,11 +26,12 @@ fn test_notification_flow() {
         &1234567890,
         &false,
         &0,
+        &soroban_sdk::String::from_str(&e, "XLM"),
     );
 
     // VERIFY: Get Events
     let all_events = e.events().all();
-    assert!(all_events.len() > 0, "No events were emitted!");
+    assert!(!all_events.is_empty(), "No events were emitted!");
 
     let last_event = all_events.last().unwrap();
     let topics = &last_event.1;
