@@ -43,9 +43,6 @@ const INSTANCE_BUMP_AMOUNT: u32 = 518400;
 pub const DEFAULT_PAGE_LIMIT: u32 = 20;
 pub const MAX_PAGE_LIMIT: u32 = 50;
 
-#[contract]
-pub struct SavingsGoalContract;
-
 #[contracttype]
 #[derive(Clone)]
 pub struct SavingsGoal {
@@ -57,6 +54,7 @@ pub struct SavingsGoal {
     pub target_date: u64,
     pub locked: bool,
     pub unlock_date: Option<u64>,
+    pub tags: Vec<String>,
 }
 
 /// Paginated result for savings goal queries
@@ -195,6 +193,9 @@ pub struct ContributionItem {
     pub goal_id: u32,
     pub amount: i128,
 }
+
+#[contract]
+pub struct SavingsGoalContract;
 
 #[contractimpl]
 impl SavingsGoalContract {
@@ -397,6 +398,112 @@ impl SavingsGoalContract {
     }
 
     // -----------------------------------------------------------------------
+    // Tag management
+    // -----------------------------------------------------------------------
+
+    fn validate_tags(tags: &Vec<String>) {
+        if tags.is_empty() {
+            panic!("Tags cannot be empty");
+        }
+        for tag in tags.iter() {
+            if tag.len() == 0 || tag.len() > 32 {
+                panic!("Tag must be between 1 and 32 characters");
+            }
+        }
+    }
+
+    pub fn add_tags_to_goal(
+        env: Env,
+        caller: Address,
+        goal_id: u32,
+        tags: Vec<String>,
+    ) {
+        caller.require_auth();
+        Self::validate_tags(&tags);
+        Self::extend_instance_ttl(&env);
+
+        let mut goals: Map<u32, SavingsGoal> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("GOALS"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut goal = goals.get(goal_id).expect("Goal not found");
+
+        if goal.owner != caller {
+            Self::append_audit(&env, symbol_short!("add_tags"), &caller, false);
+            panic!("Only the goal owner can add tags");
+        }
+
+        for tag in tags.iter() {
+            goal.tags.push_back(tag);
+        }
+
+        goals.set(goal_id, goal);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("GOALS"), &goals);
+
+        env.events().publish(
+            (symbol_short!("savings"), symbol_short!("tags_add")),
+            (goal_id, caller.clone(), tags.clone()),
+        );
+
+        Self::append_audit(&env, symbol_short!("add_tags"), &caller, true);
+    }
+
+    pub fn remove_tags_from_goal(
+        env: Env,
+        caller: Address,
+        goal_id: u32,
+        tags: Vec<String>,
+    ) {
+        caller.require_auth();
+        Self::validate_tags(&tags);
+        Self::extend_instance_ttl(&env);
+
+        let mut goals: Map<u32, SavingsGoal> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("GOALS"))
+            .unwrap_or_else(|| Map::new(&env));
+
+        let mut goal = goals.get(goal_id).expect("Goal not found");
+
+        if goal.owner != caller {
+            Self::append_audit(&env, symbol_short!("rem_tags"), &caller, false);
+            panic!("Only the goal owner can remove tags");
+        }
+
+        let mut new_tags = Vec::new(&env);
+        for existing_tag in goal.tags.iter() {
+            let mut should_keep = true;
+            for remove_tag in tags.iter() {
+                if existing_tag == remove_tag {
+                    should_keep = false;
+                    break;
+                }
+            }
+            if should_keep {
+                new_tags.push_back(existing_tag);
+            }
+        }
+
+        goal.tags = new_tags;
+        goals.set(goal_id, goal);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("GOALS"), &goals);
+
+        env.events().publish(
+            (symbol_short!("savings"), symbol_short!("tags_rem")),
+            (goal_id, caller.clone(), tags.clone()),
+        );
+
+        Self::append_audit(&env, symbol_short!("rem_tags"), &caller, true);
+    }
+
+    // -----------------------------------------------------------------------
     // Core goal operations
     // -----------------------------------------------------------------------
 
@@ -439,6 +546,7 @@ impl SavingsGoalContract {
             target_date,
             locked: true,
             unlock_date: None,
+            tags: Vec::new(&env),
         };
 
         goals.set(next_id, goal.clone());
