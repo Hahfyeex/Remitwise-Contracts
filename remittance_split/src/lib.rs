@@ -432,8 +432,51 @@ impl RemittanceSplit {
         env: Env,
         total_amount: i128,
     ) -> Result<Vec<i128>, RemittanceSplitError> {
-        let amounts = Self::calculate_split_amounts(&env, total_amount, true)?;
-        Ok(vec![&env, amounts[0], amounts[1], amounts[2], amounts[3]])
+        if total_amount <= 0 {
+            return Err(RemittanceSplitError::InvalidAmount);
+        }
+
+        let split = Self::get_split(&env);
+        let s0 = split.get(0).unwrap() as i128;
+        let s1 = split.get(1).unwrap() as i128;
+        let s2 = split.get(2).unwrap() as i128;
+
+        let spending = total_amount
+            .checked_mul(s0)
+            .and_then(|n| n.checked_div(100))
+            .ok_or(RemittanceSplitError::Overflow)?;
+        let savings = total_amount
+            .checked_mul(s1)
+            .and_then(|n| n.checked_div(100))
+            .ok_or(RemittanceSplitError::Overflow)?;
+        let bills = total_amount
+            .checked_mul(s2)
+            .and_then(|n| n.checked_div(100))
+            .ok_or(RemittanceSplitError::Overflow)?;
+        // Insurance gets the remainder to handle rounding
+        let insurance = total_amount
+            .checked_sub(spending)
+            .and_then(|n| n.checked_sub(savings))
+            .and_then(|n| n.checked_sub(bills))
+            .ok_or(RemittanceSplitError::Overflow)?;
+
+        // Emit SplitCalculated event
+
+        let event = SplitCalculatedEvent {
+            total_amount,
+            spending_amount: spending,
+            savings_amount: savings,
+            bills_amount: bills,
+            insurance_amount: insurance,
+            timestamp: env.ledger().timestamp(),
+        };
+        env.events().publish((SPLIT_CALCULATED,), event);
+        env.events().publish(
+            (symbol_short!("split"), SplitEvent::Calculated),
+            total_amount,
+        );
+
+        Ok(vec![&env, spending, savings, bills, insurance])
     }
 
     pub fn distribute_usdc(
@@ -912,6 +955,7 @@ impl RemittanceSplit {
 }
 
 #[cfg(test)]
+mod test;
 mod test {
     use super::*;
     use soroban_sdk::testutils::storage::Instance as _;
