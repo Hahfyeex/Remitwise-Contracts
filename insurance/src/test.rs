@@ -6,6 +6,7 @@ use soroban_sdk::{
     testutils::{Address as AddressTrait, Ledger, LedgerInfo},
     Address, Env, String,
 };
+use proptest::prelude::*;
 
 fn set_time(env: &Env, timestamp: u64) {
     let proto = env.ledger().protocol_version();

@@ -1,8 +1,58 @@
 #[cfg(test)]
 mod testsuit {
+        proptest! {
+            #[test]
+            fn prop_overdue_bills_all_due_dates_less_than_now(
+                now in 1_000_000u64..10_000_000u64,
+                n_overdue in 1usize..10,
+                n_future in 0usize..10
+            ) {
+                let env = Env::default();
+                set_time(&env, now);
+                let contract_id = env.register_contract(None, BillPayments);
+                let client = BillPaymentsClient::new(&env, &contract_id);
+                let owner = <soroban_sdk::Address as AddressTrait>::generate(&env);
+                env.mock_all_auths();
+
+                // Create overdue bills
+                for i in 0..n_overdue {
+                    client.create_bill(
+                        &owner,
+                        &String::from_str(&env, &format!("Overdue{}", i)),
+                        &100,
+                        &(now - 1 - i as u64), // due_date < now
+                        &false,
+                        &0,
+                    );
+                    env.mock_all_auths();
+                }
+
+                // Create future bills
+                for i in 0..n_future {
+                    client.create_bill(
+                        &owner,
+                        &String::from_str(&env, &format!("Future{}", i)),
+                        &100,
+                        &(now + 1 + i as u64), // due_date > now
+                        &false,
+                        &0,
+                    );
+                    env.mock_all_auths();
+                }
+
+                let overdue = client.get_overdue_bills(&owner);
+                // All overdue bills should have due_date < now
+                for bill in overdue.iter() {
+                    assert!(bill.due_date < now, "Bill due_date {} not less than now {}", bill.due_date, now);
+                }
+                // The number of overdue bills should match n_overdue
+                assert_eq!(overdue.len(), n_overdue);
+            }
+        }
     use crate::*;
     use soroban_sdk::testutils::{Address as AddressTrait, Ledger, LedgerInfo};
     use soroban_sdk::Env;
+    use proptest::prelude::*;
 
     fn set_time(env: &Env, timestamp: u64) {
         let proto = env.ledger().protocol_version();
