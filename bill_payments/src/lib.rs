@@ -28,6 +28,7 @@ pub struct Bill {
     pub created_at: u64,
     pub paid_at: Option<u64>,
     pub schedule_id: Option<u32>,
+    pub tags: Vec<String>,
     /// Intended currency/asset for this bill (e.g. "XLM", "USDC", "NGN").
     /// Defaults to "XLM" for entries created before this field was introduced.
     pub currency: String,
@@ -79,7 +80,6 @@ pub enum Error {
     EmptyTags = 13,
 }
 
-#[contracttype]
 #[derive(Clone)]
 #[contracttype]
 #[derive(Clone)]
@@ -90,6 +90,7 @@ pub struct ArchivedBill {
     pub amount: i128,
     pub paid_at: u64,
     pub archived_at: u64,
+    pub tags: Vec<String>,
     /// Intended currency/asset carried over from the originating `Bill`.
     pub currency: String,
 }
@@ -428,6 +429,7 @@ impl BillPayments {
             created_at: current_time,
             paid_at: None,
             schedule_id: None,
+            tags: Vec::new(&env),
             currency: resolved_currency,
         };
 
@@ -503,6 +505,7 @@ impl BillPayments {
                 created_at: current_time,
                 paid_at: None,
                 schedule_id: bill.schedule_id,
+                tags: bill.tags.clone(),
                 currency: bill.currency.clone(),
             };
             bills.set(next_id, next_bill);
@@ -921,6 +924,7 @@ impl BillPayments {
                         amount: bill.amount,
                         paid_at,
                         archived_at: current_time,
+                        tags: bill.tags.clone(),
                         currency: bill.currency.clone(),
                     };
                     archived.set(id, archived_bill);
@@ -988,6 +992,7 @@ impl BillPayments {
             created_at: archived_bill.paid_at,
             paid_at: Some(archived_bill.paid_at),
             schedule_id: None,
+            tags: archived_bill.tags.clone(),
             currency: archived_bill.currency.clone(),
         };
 
@@ -1112,6 +1117,7 @@ impl BillPayments {
                     created_at: current_time,
                     paid_at: None,
                     schedule_id: bill.schedule_id,
+                    tags: bill.tags.clone(),
                     currency: bill.currency.clone(),
                 };
                 bills.set(next_id, next_bill);

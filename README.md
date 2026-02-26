@@ -41,6 +41,13 @@ A custom Rust CLI is provided for interacting with the contracts without a UI.
 
 See [cli/README.md](cli/README.md) for usage instructions.
 
+### Additional Components
+
+- **indexer**: TypeScript event indexer for off-chain querying and analytics ([Documentation](indexer/README.md))
+- **analytics**: On-chain analytics and reporting
+- **orchestrator**: Cross-contract coordination
+- **reporting**: Financial reporting and insights
+
 ## Prerequisites
 
 - Rust (latest stable version)
@@ -257,6 +264,10 @@ cargo build --release --target wasm32-unknown-unknown
 - [Family Wallet Design (as implemented)](docs/family-wallet-design.md)
 - [Frontend Integration Notes](docs/frontend-integration.md)
 - [Storage Layout Reference](STORAGE_LAYOUT.md)
+- [Event Indexer](indexer/README.md) - Off-chain event indexing and querying
+- [Tagging Feature](TAGGING_FEATURE.md) - Tag-based organization system
+- [Threat Model](THREAT_MODEL.md) - Security analysis and mitigations
+- [Security Review Summary](SECURITY_REVIEW_SUMMARY.md)
 
 ## Contracts
 
